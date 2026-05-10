@@ -1,56 +1,29 @@
 <Project>
   <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591;CS0067</NoWarn>
-    <Configurations>Debug;Release</Configurations>
-    <LangVersion>latestmajor</LangVersion>
-    <Platforms>AnyCPU;x86;x64;ARM64</Platforms>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
-    <UseRidGraph>true</UseRidGraph>
+    <TargetFramework Condition="'$(TargetFramework)' == '' and '$(TargetFrameworks)' == ''">net9.0</TargetFramework>
+    <LangVersion Condition="'$(LangVersion)' == ''">latest</LangVersion>
+    <Nullable Condition="'$(Nullable)' == ''">enable</Nullable>
+    <ImplicitUsings Condition="'$(ImplicitUsings)' == ''">enable</ImplicitUsings>
+    <TreatWarningsAsErrors Condition="'$(TreatWarningsAsErrors)' == ''">true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild Condition="'$(EnforceCodeStyleInBuild)' == ''">true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile Condition="'$(GenerateDocumentationFile)' == ''">true</GenerateDocumentationFile>
+    <AnalysisLevel Condition="'$(AnalysisLevel)' == ''">latest-recommended</AnalysisLevel>
+    <Deterministic Condition="'$(Deterministic)' == ''">true</Deterministic>
+    <EmbedUntrackedSources Condition="'$(EmbedUntrackedSources)' == ''">true</EmbedUntrackedSources>
+
+    <Authors Condition="'$(Authors)' == ''">Kiarash Minoo</Authors>
+    <Company Condition="'$(Company)' == ''">KiarashMinoo</Company>
+    <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">https://github.com/KiarashMinoo</PackageProjectUrl>
+    <RepositoryType Condition="'$(RepositoryType)' == ''">git</RepositoryType>
+    <PackageLicenseExpression Condition="'$(PackageLicenseExpression)' == ''">MIT</PackageLicenseExpression>
+    <PackageIcon Condition="'$(PackageIcon)' == '' and Exists('$(MSBuildProjectDirectory)\\icon.png')">icon.png</PackageIcon>
+    <PackageReadmeFile Condition="'$(PackageReadmeFile)' == '' and Exists('$(MSBuildProjectDirectory)\\README.md')">README.md</PackageReadmeFile>
+    <SymbolPackageFormat Condition="'$(SymbolPackageFormat)' == ''">snupkg</SymbolPackageFormat>
+    <IncludeSymbols Condition="'$(IncludeSymbols)' == ''">true</IncludeSymbols>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true' and '$(ContinuousIntegrationBuild)' == ''">true</ContinuousIntegrationBuild>
   </PropertyGroup>
-  <!-- Code quality — refs: ThunderPropagator#4 -->
-  <PropertyGroup Label="CodeQuality">
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <AnalysisLevel>latest-recommended</AnalysisLevel>
-    <Deterministic>true</Deterministic>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <DebugSymbols>False</DebugSymbols>
-    <DebugType>None</DebugType>
-    <DefineConstants />
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-  </PropertyGroup>
-  <PropertyGroup Label="PackageHelper">
-    <PackageIdConfigurationSuffix Condition="'$(Configuration)' == 'Debug'">.Debug</PackageIdConfigurationSuffix>
-    <PackageIdPlatformSuffix Condition="'$(Platform)' != 'AnyCPU'">.$(Platform)</PackageIdPlatformSuffix>
-  </PropertyGroup>
-  <PropertyGroup Label="nuget">
-    <IsPackable>true</IsPackable>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>ThunderPropagator</Authors>
-    <Description>Redefining real time data streaming; effortless, blazingly fast and cloud-native for maximum impact</Description>
-    <Copyright>Copyright ©2024 ThunderPropagator Corporation</Copyright>
-    <PackageProjectUrl>https://www.thunderpropagator.com</PackageProjectUrl>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/KiarashMinoo/ThunderPropagator.Feeviders</RepositoryUrl>
-    <PackageTags>Real-Time Data Streaming, Blazingly Fast, Cloud-Native, Data Streaming, Effortless Performance, High Impact, Real-Time Processing, Fast Data Pipelines, Cloud Solutions, Streaming Technology</PackageTags>
-    <PackageIcon>ThunderPropagator.png</PackageIcon>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <AvoidCycleErrorOnSelfReference>true</AvoidCycleErrorOnSelfReference>
-  </PropertyGroup>
-  <PropertyGroup Label="PackageId">
-    <PackageId>$(MSBuildProjectName)$(PackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</PackageId>
-  </PropertyGroup>
+
   <ItemGroup>
-    <None Include="ThunderPropagator.png" Pack="true" Link="ThunderPropagator.png" PackagePath="" />
-    <None Include="README.md" Pack="true" Link="README.md" PackagePath="" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
   </ItemGroup>
 </Project>
