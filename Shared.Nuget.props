@@ -1,0 +1,35 @@
+<Project>
+    <PropertyGroup Label="NuGetPackageMetadata">
+        <IsPackable>true</IsPackable>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Authors>ThunderPropagator</Authors>
+        <Description>ThunderPropagator (Project ARC): High-performance data propagation; effortless,
+            blazingly fast and cloud-native for maximum impact</Description>
+        <Copyright>Copyright ©2024 ThunderPropagator Corporation</Copyright>
+        <PackageProjectUrl>https://www.thunderpropagator.com</PackageProjectUrl>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/KiarashMinoo/ThunderPropagator.BuildingBlocks</RepositoryUrl>
+        <PackageTags>Real-Time Data Propagation, Blazingly Fast, Cloud-Native, Data Streaming,
+            Effortless Performance, High Impact, Real-Time Processing, Fast Data Pipelines, Cloud
+            Solutions, ThunderPropagator, Project ARC</PackageTags>
+        <PackageIcon>ThunderPropagator.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <AvoidCycleErrorOnSelfReference>true</AvoidCycleErrorOnSelfReference>
+    </PropertyGroup>
+    <PropertyGroup Label="PackageIdSuffixing">
+        <PackageIdConfigurationSuffix
+            Condition="'$(PackageIdConfigurationSuffix)' == '' and '$(Configuration)' == 'Debug'">
+            .Debug</PackageIdConfigurationSuffix>
+        <PackageIdPlatformSuffix
+            Condition="'$(PackageIdPlatformSuffix)' == '' and '$(Platform)' != '' and '$(Platform)' != 'AnyCPU'">
+            .$(Platform)</PackageIdPlatformSuffix>
+    </PropertyGroup>
+    <PropertyGroup Label="PackageId">
+        <PackageId Condition="'$(PackageId)' == ''">
+            $(MSBuildProjectName)$(PackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</PackageId>
+    </PropertyGroup>
+    <PropertyGroup Label="SingleFilePublishSettings">
+        <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    </PropertyGroup>
+</Project>
