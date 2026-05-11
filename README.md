@@ -15,7 +15,7 @@ This repository is the single source of truth for:
 
 ### Directory.Build.props
 Defines default SDK-wide build settings expected across ThunderPropagator repositories, including:
-- net9.0 default target framework when a project does not override it
+- net10.0 default target framework when a project does not override it
 - nullable reference types and implicit usings
 - warnings as errors and code-style enforcement in build
 - package metadata defaults such as author, company, license, SourceLink, symbols, and CI build flags
