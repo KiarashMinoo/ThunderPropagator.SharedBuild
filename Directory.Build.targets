@@ -1,0 +1,8 @@
+<!-- Directory.Build.targets — auto-imports analysers.props for every project  [refs: ThunderPropagator#4]
+     Place this file at the repository root alongside Directory.Build.props.
+     MSBuild runs .targets files after individual projects, so analyser settings
+     flow in without any per-project csproj change. -->
+<Project>
+  <Import Project="$(MSBuildThisFileDirectory)analysers.props"
+          Condition="Exists('$(MSBuildThisFileDirectory)analysers.props')" />
+</Project>
