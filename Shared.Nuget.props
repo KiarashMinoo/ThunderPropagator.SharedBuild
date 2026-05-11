@@ -1,16 +1,19 @@
 <Project>
-  <Target Name="DownloadThunderPropagatorIcon" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ThunderPropagatorIconSourceUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/ThunderPropagator.png</ThunderPropagatorIconSourceUrl>
-      <ThunderPropagatorIconFileName>ThunderPropagator.png</ThunderPropagatorIconFileName>
-      <ThunderPropagatorIconPath>$(MSBuildThisFileDirectory)ThunderPropagator.png</ThunderPropagatorIconPath>
-    </PropertyGroup>
-    <MakeDir Directories="$(MSBuildThisFileDirectory)" />
-    <Message Importance="High" Text="ThunderPropagator icon already exists at $(ThunderPropagatorIconPath); skipping download." Condition="Exists('$(ThunderPropagatorIconPath)')" />
-    <Exec Condition="!Exists('$(ThunderPropagatorIconPath)')"
-          Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -Command &quot;$ErrorActionPreference = 'Stop'; $uri = '$(ThunderPropagatorIconSourceUrl)'; $dest = '$(ThunderPropagatorIconPath)'; $maxRetries = 3; $waitSeconds = 5; for ($i = 1; $i -le $maxRetries; $i++) { try { Invoke-WebRequest -Uri $uri -OutFile $dest; exit 0 } catch { Write-Host ('Download attempt {0} of {1} failed: {2}' -f $i, $maxRetries, $_.Exception.Message); if ($i -eq $maxRetries) { throw }; Start-Sleep -Seconds $waitSeconds } }&quot;" />
+  <PropertyGroup>
+    <ThunderPropagatorIconSourceUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/ThunderPropagator.png</ThunderPropagatorIconSourceUrl>
+    <ThunderPropagatorIconFileName>ThunderPropagator.png</ThunderPropagatorIconFileName>
+    <ThunderPropagatorIconPath>$(MSBuildThisFileDirectory)ThunderPropagator.png</ThunderPropagatorIconPath>
+  </PropertyGroup>
+  <Target Name="CleanThunderPropagatorIcon" BeforeTargets="Clean">
+    <Message Importance="High" Text="Cleaning up ThunderPropagator icon at $(ThunderPropagatorIconPath)." Condition="Exists('$(ThunderPropagatorIconPath)')"/>
+    <Delete Files="$(ThunderPropagatorIconPath)" Condition="Exists('$(ThunderPropagatorIconPath)')"/>
   </Target>
-
+  <Target Name="DownloadThunderPropagatorIcon" BeforeTargets="Build">
+    <MakeDir Directories="$(MSBuildThisFileDirectory)"/>
+    <Message Importance="High" Text="ThunderPropagator icon already exists at $(ThunderPropagatorIconPath); skipping download." Condition="Exists('$(ThunderPropagatorIconPath)')"/>
+    <Exec Condition="!Exists('$(ThunderPropagatorIconPath)')"
+          Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -Command &quot;$ErrorActionPreference = 'Stop'; $uri = '$(ThunderPropagatorIconSourceUrl)'; $dest = '$(ThunderPropagatorIconPath)'; $maxRetries = 3; $waitSeconds = 5; for ($i = 1; $i -le $maxRetries; $i++) { try { Invoke-WebRequest -Uri $uri -OutFile $dest; exit 0 } catch { Write-Host ('Download attempt {0} of {1} failed: {2}' -f $i, $maxRetries, $_.Exception.Message); if ($i -eq $maxRetries) { throw }; Start-Sleep -Seconds $waitSeconds } }&quot;"/>
+  </Target>
   <PropertyGroup Label="NuGetPackageMetadata">
     <IsPackable>true</IsPackable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -38,6 +41,6 @@
   </PropertyGroup>
 
   <ItemGroup Label="PackageAssets">
-    <None Include="$(ThunderPropagatorIconPath)" Pack="true" Link="$(ThunderPropagatorIconFileName)" PackagePath="" />
+    <None Include="$(ThunderPropagatorIconPath)" Pack="true" Link="$(ThunderPropagatorIconFileName)" PackagePath=""/>
   </ItemGroup>
 </Project>
