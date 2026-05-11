@@ -1,3 +1,7 @@
+# ThunderPropagator
+
+**ThunderPropagator** is a cutting-edge software solution designed to redefine real-time data streaming. Our mission is to provide **effortless, blazingly fast, and cloud-native streaming capabilities** for maximum impact. 
+
 # ThunderPropagator.SharedBuild
 
 Shared MSBuild and repository infrastructure for the open-source ThunderPropagator repositories.
