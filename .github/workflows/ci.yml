@@ -1,0 +1,18 @@
+# CI — Build & Test  [refs: ThunderPropagator#4]
+name: CI — Build & Test
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'bugfix/**'
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  ci:
+    uses: KiarashMinoo/.github/.github/workflows/reusable-ci.yml@main
+    secrets:
+      gh-token: ${{ secrets.GH_TOKEN }}
