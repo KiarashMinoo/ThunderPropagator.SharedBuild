@@ -1,0 +1,54 @@
+<Project>
+  <PropertyGroup>
+    <ThunderPropagatorIconSourceUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/ThunderPropagator.png</ThunderPropagatorIconSourceUrl>
+    <ThunderPropagatorIconFileName>ThunderPropagator.png</ThunderPropagatorIconFileName>
+    <ThunderPropagatorIconPath>$(MSBuildThisFileDirectory)ThunderPropagator.png</ThunderPropagatorIconPath>
+  </PropertyGroup>
+
+  <Target Name="CleanThunderPropagatorIcon" BeforeTargets="Clean">
+    <Message Importance="normal" Text="[SharedProps] Cleaning ThunderPropagator icon at $(ThunderPropagatorIconPath)." Condition="Exists('$(ThunderPropagatorIconPath)')"/>
+    <Delete Files="$(ThunderPropagatorIconPath)" Condition="Exists('$(ThunderPropagatorIconPath)')"/>
+  </Target>
+
+  <Target Name="DownloadThunderPropagatorIcon" BeforeTargets="Build">
+    <MakeDir Directories="$(MSBuildThisFileDirectory)" Condition="!Exists('$(MSBuildThisFileDirectory)')"/>
+    <Message Importance="normal" Text="[SharedProps] Downloading ThunderPropagator icon …" Condition="!Exists('$(ThunderPropagatorIconPath)')"/>
+    <DownloadFile SourceUrl="$(ThunderPropagatorIconSourceUrl)"
+                  DestinationFolder="$(MSBuildThisFileDirectory)"
+                  DestinationFileName="$(ThunderPropagatorIconFileName)"
+                  Condition="!Exists('$(ThunderPropagatorIconPath)')"
+                  ContinueOnError="WarnAndContinue" />
+    <Message Importance="normal" Text="[SharedProps] ThunderPropagator icon already exists; skipping download." Condition="Exists('$(ThunderPropagatorIconPath)')"/>
+  </Target>
+
+  <PropertyGroup Label="NuGetPackageMetadata">
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>ThunderPropagator</Authors>
+    <Description>ThunderPropagator (Project ARC): High-performance data propagation; effortless, blazingly fast and cloud-native for maximum impact</Description>
+    <Copyright>Copyright ©2024 ThunderPropagator Corporation</Copyright>
+    <PackageProjectUrl>https://www.thunderpropagator.com</PackageProjectUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageIcon>$(ThunderPropagatorIconFileName)</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <AvoidCycleErrorOnSelfReference>true</AvoidCycleErrorOnSelfReference>
+  </PropertyGroup>
+
+  <PropertyGroup Label="PackageIdSuffixing">
+    <PackageIdConfigurationSuffix Condition="'$(PackageIdConfigurationSuffix)' == '' and '$(Configuration)' == 'Debug'">.Debug</PackageIdConfigurationSuffix>
+    <PackageIdPlatformSuffix Condition="'$(PackageIdPlatformSuffix)' == '' and '$(Platform)' != '' and '$(Platform)' != 'AnyCPU'">.$(Platform)</PackageIdPlatformSuffix>
+  </PropertyGroup>
+
+  <PropertyGroup Label="PackageId">
+    <PackageId Condition="'$(PackageId)' == ''">$(MSBuildProjectName)$(PackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</PackageId>
+  </PropertyGroup>
+
+  <PropertyGroup Label="SingleFilePublishSettings">
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup Label="PackageAssets">
+    <None Include="$(ThunderPropagatorIconPath)" Pack="true" Link="$(ThunderPropagatorIconFileName)" PackagePath=""/>
+  </ItemGroup>
+</Project>
