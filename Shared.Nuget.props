@@ -29,6 +29,7 @@
     <Copyright>Copyright ©2024 ThunderPropagator Corporation</Copyright>
     <PackageProjectUrl>https://www.thunderpropagator.com</PackageProjectUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageTags>Real-Time Data Propagation, Blazingly Fast, Cloud-Native, Data Streaming, Effortless Performance, High Impact, Real-Time Processing, Fast Data Pipelines, Cloud Solutions, ThunderPropagator, Project ARC</PackageTags>
     <PackageIcon>$(ThunderPropagatorIconFileName)</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <AvoidCycleErrorOnSelfReference>true</AvoidCycleErrorOnSelfReference>

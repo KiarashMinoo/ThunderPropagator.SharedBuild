@@ -1,0 +1,26 @@
+<Project>
+    <PropertyGroup Label="DefaultBuildContext">
+        <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+        <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>
+    </PropertyGroup>
+    <PropertyGroup Label="BuildDefaults">
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591;CS0067</NoWarn>
+        <Configurations>Debug;Release</Configurations>
+        <LangVersion>latestmajor</LangVersion>
+        <Platforms>AnyCPU;x86;x64;ARM64</Platforms>
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+        <UseRidGraph>true</UseRidGraph>
+    </PropertyGroup>
+    <PropertyGroup Label="ReleaseBuildSettings" Condition="'$(Configuration)'=='Release'">
+        <DebugSymbols>False</DebugSymbols>
+        <DebugType>None</DebugType>
+        <DefineConstants />
+    </PropertyGroup>
+    <PropertyGroup Label="CiBuildSettings" Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild Condition="'$(ContinuousIntegrationBuild)' == ''">true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+</Project>
