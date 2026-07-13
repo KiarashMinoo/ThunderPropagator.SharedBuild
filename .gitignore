@@ -1,32 +1,38 @@
+# ============================================================
+# OS and editor artifacts
+# ============================================================
+.DS_Store
 *.swp
 *.*~
-project.lock.json
-.DS_Store
-*.pyc
-nupkg/
 
-# Visual Studio Code
-.vscode/
-
-# Rider
+# ============================================================
+# IDEs and tools
+# ============================================================
+.claude/
+.cr/
+.fleet/
 .idea/
-
-# Visual Studio
+.vscode/
 .vs/
 
-# Fleet
-.fleet/
-
-# Code Rush
-.cr/
-
-# User-specific files
+# ============================================================
+# User-specific project files
+# ============================================================
+*.sln.docstates
 *.suo
 *.user
 *.userosscache
-*.sln.docstates
 
-# Build results
+# ============================================================
+# Language and package artifacts
+# ============================================================
+*.pyc
+nupkg/
+project.lock.json
+
+# ============================================================
+# Build output
+# ============================================================
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
@@ -38,20 +44,17 @@ bld/
 [Bb]in/
 [Oo]bj/
 [Oo]ut/
-msbuild.log
 msbuild.err
+msbuild.log
 msbuild.wrn
 
+# ============================================================
+# Runtime data
+# ============================================================
 [Vv]olumes
-
-mongo_data/
-
-mongo_data_web/
-
-redis_data/
-
-logs/
-
-data/
-
 artifacts/
+data/
+logs/
+mongo_data/
+mongo_data_web/
+redis_data/
