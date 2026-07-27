@@ -13,6 +13,8 @@ A static build-configuration repo — no source code, no solution, nothing to `d
 - An analyzer-settings file that turns on .NET analyzers and treats analyzer/compiler warnings as errors.
 - A thin auto-import target whose only job is pulling the analyzer settings into every consumer without touching that consumer's own project file.
 - An editor/formatting-convention file consumed the same way every other repo consumes its own copy.
+- A package-identity file: one `{Name}PackageId` property per published family package, so a consumer's central package-management file references the pattern instead of redefining it (and never accidentally depends on a `.Cluster`-suffixed package, since no family package publishes one).
+- An optional PowerShell dependency-updater: auto-discovers every `{Name}PackageId`-driven entry in a consumer's central package-management file and bumps it to the latest published version (prerelease included), by cross-referencing the package-identity file above. No consumer-specific edits needed — a consumer only needs to follow the existing `Include="$({Name}PackageId)"` convention. Downloaded best-effort alongside the props files; its absence never fails a build.
 
 ## Editing conventions
 
