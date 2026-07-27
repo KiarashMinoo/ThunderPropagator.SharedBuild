@@ -2,10 +2,12 @@
   <!--
     Wires the optional dependency-updater script into a consumer's restore pipeline as a
     report-only, pre-restore check: DownloadScript fetches the script (or reuses a consumer's
-    own committed copy under .github/scripts/ — see the path comment below), and
-    RunDependencyUpdater then runs it with -Check, which only prints current-vs-latest
-    versions and never mutates a tracked file. Both targets are Restore-only and every
-    failure is a warning, so a network hiccup or script error never breaks the build.
+    own committed copy under .github/scripts/ — see the path comment below) and runs on both
+    Build and Restore so the script is available either way. RunDependencyUpdater is the
+    actual check — it runs the script with -Check, which only prints current-vs-latest
+    versions and never mutates a tracked file — and is deliberately Restore-only, never on a
+    plain Build. Every failure is a warning, so a network hiccup or script error never breaks
+    the build.
   -->
   <PropertyGroup>
     <ScriptName>Update-ThunderPropagatorDependencies.ps1</ScriptName>
@@ -39,7 +41,7 @@
     <Message Importance="high" Text="[SharedProps] Could not download $(ScriptName) after 3 attempts; skipping the dependency-version check for this run." Condition="!Exists('$(ScriptPath)')"/>
   </Target>
 
-  <Target Name="RunDependencyUpdater" AfterTargets="DownloadScript" BeforeTargets="_GenerateRestoreProjectPathWalk;Restore;Build" Condition="Exists('$(ScriptPath)')">
+  <Target Name="RunDependencyUpdater" AfterTargets="DownloadScript" BeforeTargets="_GenerateRestoreProjectPathWalk;Restore" Condition="Exists('$(ScriptPath)')">
     <Message Importance="normal" Text="[SharedProps] Checking ThunderPropagator dependency versions via $(ScriptPath) ..."/>
     <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(ScriptPath)&quot; -Check"
           ContinueOnError="WarnAndContinue"
