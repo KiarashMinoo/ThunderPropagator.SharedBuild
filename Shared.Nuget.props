@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <ThunderPropagatorIconSourceUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/ThunderPropagator.png</ThunderPropagatorIconSourceUrl>
+    <ThunderPropagatorIconUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/ThunderPropagator.png</ThunderPropagatorIconUrl>
     <ThunderPropagatorIconFileName>ThunderPropagator.png</ThunderPropagatorIconFileName>
     <ThunderPropagatorIconPath>$(MSBuildThisFileDirectory)ThunderPropagator.png</ThunderPropagatorIconPath>
   </PropertyGroup>
@@ -8,12 +8,13 @@
   <Target Name="CleanThunderPropagatorIcon" BeforeTargets="Clean">
     <Message Importance="normal" Text="[SharedProps] Cleaning ThunderPropagator icon at $(ThunderPropagatorIconPath)." Condition="Exists('$(ThunderPropagatorIconPath)')"/>
     <Delete Files="$(ThunderPropagatorIconPath)" Condition="Exists('$(ThunderPropagatorIconPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Cleaned ThunderPropagator icon at $(ThunderPropagatorIconPath)." Condition="!Exists('$(ThunderPropagatorIconPath)')"/>
   </Target>
 
-  <Target Name="DownloadThunderPropagatorIcon" BeforeTargets="Build">
+  <Target Name="DownloadThunderPropagatorIcon" BeforeTargets="Build;Restore">
     <MakeDir Directories="$(MSBuildThisFileDirectory)" Condition="!Exists('$(MSBuildThisFileDirectory)')"/>
     <Message Importance="normal" Text="[SharedProps] Downloading ThunderPropagator icon …" Condition="!Exists('$(ThunderPropagatorIconPath)')"/>
-    <DownloadFile SourceUrl="$(ThunderPropagatorIconSourceUrl)"
+    <DownloadFile SourceUrl="$(ThunderPropagatorIconUrl)"
                   DestinationFolder="$(MSBuildThisFileDirectory)"
                   DestinationFileName="$(ThunderPropagatorIconFileName)"
                   Condition="!Exists('$(ThunderPropagatorIconPath)')"
@@ -50,6 +51,22 @@
   </PropertyGroup>
 
   <ItemGroup Label="PackageAssets">
+    <!-- PackagePath="README.md" ensures consistent naming inside the package on case-sensitive Linux -->
+    <None Include="$(MSBuildThisFileDirectory)ReadMe.md" Pack="true" PackagePath="README.md" />
     <None Include="$(ThunderPropagatorIconPath)" Pack="true" Link="$(ThunderPropagatorIconFileName)" PackagePath=""/>
   </ItemGroup>
+
+  <!--
+    Supply chain: enable NuGet restore-time vulnerability auditing.
+    RestoreAudit checks every resolved package against the GitHub Advisory Database
+    (and the NuGet.org vulnerability feed) during dotnet restore / dotnet build.
+    NuGetAuditMode=all extends the audit from direct dependencies to all transitives.
+    NuGetAuditLevel=moderate is the minimum severity that fails the restore.
+    Without these flags, vulnerable transitive dependencies can slip in silently.
+  -->
+  <PropertyGroup Label="NuGetAudit">
+    <RestoreAudit>true</RestoreAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>moderate</NuGetAuditLevel>
+  </PropertyGroup>
 </Project>

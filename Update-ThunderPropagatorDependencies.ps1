@@ -6,29 +6,36 @@
 .DESCRIPTION
     Lives in ThunderPropagator.SharedBuild and is downloaded into every consuming repo's
     .shared-props\ folder by the same DownloadSharedProps target that fetches
-    Shared.Build.props / Shared.Nuget.props / Shared.PackageIds.props -- no per-repo copy
-    or edits required.
+    Shared.Build.props / Shared.Nuget.props / Shared.PackageIds.props / Shared.DependencyUpdater.props.
+    A consuming repo may additionally keep a committed copy of this script at
+    .github\scripts\ (so the check has no download/network dependency for the script
+    itself -- Shared.DependencyUpdater.props prefers that copy when present). Path
+    resolution below works unmodified from either location, or any other folder inside
+    the repo, since it walks up to find Directory.Packages.props as the repo-root marker
+    instead of assuming a fixed relative layout.
 
-    Fully auto-discovering: it reads Shared.PackageIds.props (sitting next to this script
-    once downloaded) to learn every "{Name}PackageId" pattern ThunderPropagator publishes,
-    then scans the target repo's own Directory.Packages.props for PackageVersion entries
-    whose Include is one of those PackageId properties. Entries that share the same
-    version property (e.g. BuildingBlocksPackageId and BuildingBlocksModulesPackageId both
-    pinned via BuildingBlocksVersion) are resolved and updated together; entries pinned
-    with a literal version string are updated in place individually. Any repo that adopts
-    the "$(XxxPackageId)" convention works with this script unmodified -- nothing here is
+    Fully auto-discovering: it reads Shared.PackageIds.props to learn every
+    "{Name}PackageId" pattern ThunderPropagator publishes, then scans the target repo's
+    own Directory.Packages.props for PackageVersion entries whose Include is one of those
+    PackageId properties. Entries that share the same version property (e.g.
+    BuildingBlocksPackageId and BuildingBlocksModulesPackageId both pinned via
+    BuildingBlocksVersion) are resolved and updated together; entries pinned with a
+    literal version string are updated in place individually. Any repo that adopts the
+    "$(XxxPackageId)" convention works with this script unmodified -- nothing here is
     specific to any one consuming repo.
 
     nuget.org is a public feed with no auth required, so no token or source registration
     is needed -- this queries "$Source" directly regardless of what's in NuGet.Config.
 
 .PARAMETER PropsPath
-    Path to the target repo's Directory.Packages.props.
-    Defaults to the file one directory above this script (i.e. the repo root, since this
-    script normally lives in that repo's .shared-props\ subfolder).
+    Path to the target repo's Directory.Packages.props. Defaults to the nearest
+    Directory.Packages.props found by walking up from this script's own folder -- works
+    whether this script lives in <repo>\.shared-props\, <repo>\.github\scripts\, or
+    anywhere else inside the repo.
 
 .PARAMETER SharedPackageIdsPath
-    Path to Shared.PackageIds.props. Defaults to the copy sitting next to this script.
+    Path to Shared.PackageIds.props. Defaults to the copy sitting next to this script if
+    present, otherwise <repo root>\.shared-props\Shared.PackageIds.props.
 
 .PARAMETER Source
     NuGet v3 service index to search. Defaults to nuget.org.
@@ -55,21 +62,42 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference    = 'SilentlyContinue'
 
-# ── Resolve paths (this script normally sits in <repo>\.shared-props\) ───────
+# ── Resolve paths (works from .shared-props\, .github\scripts\, or any other
+#    folder inside the target repo -- walks up to find Directory.Packages.props as
+#    the repo-root marker instead of assuming a fixed relative layout) ───────────
 
-if ([string]::IsNullOrWhiteSpace($SharedPackageIdsPath)) {
-    $SharedPackageIdsPath = Join-Path $PSScriptRoot "Shared.PackageIds.props"
-}
-if (-not (Test-Path $SharedPackageIdsPath)) {
-    throw "Shared.PackageIds.props not found at '$SharedPackageIdsPath'. Run 'dotnet restore' first, or pass -SharedPackageIdsPath."
+function Find-RepoRoot {
+    param([string]$StartDirectory)
+    $dir = $StartDirectory
+    while ($dir) {
+        if (Test-Path (Join-Path $dir "Directory.Packages.props")) { return $dir }
+        $parent = Split-Path $dir -Parent
+        if (-not $parent -or $parent -eq $dir) { return $null }
+        $dir = $parent
+    }
+    return $null
 }
 
 if ([string]::IsNullOrWhiteSpace($PropsPath)) {
-    $repoRoot  = Split-Path $PSScriptRoot -Parent
+    $repoRoot = Find-RepoRoot -StartDirectory $PSScriptRoot
+    if (-not $repoRoot) {
+        throw "Could not locate Directory.Packages.props by walking up from '$PSScriptRoot'. Pass -PropsPath explicitly."
+    }
     $PropsPath = Join-Path $repoRoot "Directory.Packages.props"
 }
 if (-not (Test-Path $PropsPath)) {
     throw "Directory.Packages.props not found at '$PropsPath'. Pass -PropsPath explicitly."
+}
+
+if ([string]::IsNullOrWhiteSpace($SharedPackageIdsPath)) {
+    # Prefer a copy sitting right next to this script (the .shared-props\ case);
+    # otherwise fall back to <repo root>\.shared-props\Shared.PackageIds.props
+    # (the repo-local-copy case, e.g. .github\scripts\).
+    $sibling              = Join-Path $PSScriptRoot "Shared.PackageIds.props"
+    $SharedPackageIdsPath = if (Test-Path $sibling) { $sibling } else { Join-Path (Split-Path $PropsPath -Parent) ".shared-props/Shared.PackageIds.props" }
+}
+if (-not (Test-Path $SharedPackageIdsPath)) {
+    throw "Shared.PackageIds.props not found at '$SharedPackageIdsPath'. Run 'dotnet restore' first, or pass -SharedPackageIdsPath."
 }
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -100,17 +128,33 @@ function Get-LatestPackageVersion {
         return $null
     }
 
-    $pkg = $parsed.searchResult |
-           ForEach-Object { $_.packages } |
-           Where-Object { $_.id -ieq $PackageId } |
-           Select-Object -First 1
+    $matched = $parsed.searchResult |
+               ForEach-Object { $_.packages } |
+               Where-Object { $_.id -ieq $PackageId }
 
-    if (-not $pkg) {
+    if (-not $matched) {
         Write-Warn "  '$PackageId': not found on '$SourceUrl' -- skipping"
         return $null
     }
 
-    return $pkg.latestVersion
+    # --exact-match changes the search-result shape: an unqualified search returns one
+    # summary entry per package with a "latestVersion" field, but --exact-match instead
+    # returns one entry PER PUBLISHED VERSION, each carrying a "version" field (no
+    # "latestVersion" at all). Accept either shape -- via PSObject.Properties so a
+    # missing property returns $null instead of throwing under Set-StrictMode -- and
+    # take the highest version across every entry returned.
+    $versions = foreach ($pkg in $matched) {
+        $prop = $pkg.PSObject.Properties['latestVersion']
+        if (-not $prop) { $prop = $pkg.PSObject.Properties['version'] }
+        if ($prop) { $prop.Value }
+    }
+
+    if (-not $versions) {
+        Write-Warn "  '$PackageId': search result had neither 'latestVersion' nor 'version' -- skipping"
+        return $null
+    }
+
+    return $versions | Sort-Object { Get-VersionSortKey $_ } -Descending | Select-Object -First 1
 }
 
 # ── Step 1: learn every "{Name}PackageId" pattern from Shared.PackageIds.props ─

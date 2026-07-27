@@ -1,0 +1,25 @@
+<Project>
+  <PropertyGroup>
+    <ScriptName>Update-ThunderPropagatorDependencies.ps1</ScriptName>
+    <ScriptUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/$(ScriptName)</ScriptUrl>
+    <ScriptsPath>$(MSBuildThisFileDirectory)/.github/scripts/</ScriptsPath>
+    <ScriptPath>$(ScriptsPath)$(ScriptName)</ScriptPath>
+  </PropertyGroup>
+
+  <Target Name="CleanScript" BeforeTargets="Clean">
+    <Message Importance="normal" Text="[SharedProps] Cleaning $(ScriptName) script at $(ScriptPath)." Condition="Exists('$(ScriptPath)')"/>
+    <Delete Files="$(ScriptPath)" Condition="Exists('$(ScriptPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Cleaned $(ScriptName) script at $(ScriptPath)." Condition="!Exists('$(ScriptPath)')"/>
+  </Target>
+
+  <Target Name="DownloadScript" BeforeTargets="Build;Restore">
+    <MakeDir Directories="$(ScriptsPath)" Condition="!Exists('$(ScriptsPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Downloading $(ScriptName) script ..." Condition="!Exists('$(ScriptPath)')"/>
+    <DownloadFile DestinationFileName="$(ScriptName)"
+                  SourceUrl="$(ScriptUrl)"
+                  DestinationFolder="$(ScriptsPath)"
+                  Condition="!Exists('$(ScriptPath)')"
+                  ContinueOnError="WarnAndContinue"/>
+    <Message Importance="normal" Text="[SharedProps] $(ScriptName) already exists; skipping download." Condition="Exists('$(ScriptPath)')"/>
+  </Target>
+</Project>
