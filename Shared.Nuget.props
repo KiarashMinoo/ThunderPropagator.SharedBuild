@@ -14,10 +14,12 @@
   <Target Name="DownloadThunderPropagatorIcon" BeforeTargets="Build;Restore">
     <MakeDir Directories="$(MSBuildThisFileDirectory)" Condition="!Exists('$(MSBuildThisFileDirectory)')"/>
     <Message Importance="normal" Text="[SharedProps] Downloading ThunderPropagator icon …" Condition="!Exists('$(ThunderPropagatorIconPath)')"/>
-    <DownloadFile SourceUrl="$(ThunderPropagatorIconUrl)"
+    <DownloadFile DestinationFileName="$(ThunderPropagatorIconFileName)"
+                  SourceUrl="$(ThunderPropagatorIconUrl)"
                   DestinationFolder="$(MSBuildThisFileDirectory)"
-                  DestinationFileName="$(ThunderPropagatorIconFileName)"
                   Condition="!Exists('$(ThunderPropagatorIconPath)')"
+                  Retries="3"
+                  RetryDelayMilliseconds="2000"
                   ContinueOnError="WarnAndContinue" />
     <Message Importance="normal" Text="[SharedProps] ThunderPropagator icon already exists; skipping download." Condition="Exists('$(ThunderPropagatorIconPath)')"/>
   </Target>

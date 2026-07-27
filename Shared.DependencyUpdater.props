@@ -14,12 +14,15 @@
 
   <Target Name="DownloadScript" BeforeTargets="Restore">
     <MakeDir Directories="$(ScriptsPath)" Condition="!Exists('$(ScriptsPath)')"/>
-    <Message Importance="normal" Text="[SharedProps] Downloading $(ScriptName) script ..."/>
+    <Message Importance="normal" Text="[SharedProps] Downloading $(ScriptName) script ..." Condition="!Exists('$(ScriptPath)')"/>
     <DownloadFile DestinationFileName="$(ScriptName)"
                   SourceUrl="$(ScriptUrl)"
                   DestinationFolder="$(ScriptsPath)"
+                  Condition="!Exists('$(ScriptPath)')"
                   Retries="3"
-                  RetryDelayMilliseconds="2000" />
+                  RetryDelayMilliseconds="2000"
+                  ContinueOnError="WarnAndContinue"/>
+    <Message Importance="normal" Text="[SharedProps] $(ScriptName) already exists; skipping download." Condition="Exists('$(ScriptPath)')"/>
   </Target>
 
   <Target Name="RunDependencyUpdater" AfterTargets="DownloadScript" BeforeTargets="Restore" Condition="Exists('$(ScriptPath)')">
