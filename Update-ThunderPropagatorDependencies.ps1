@@ -239,7 +239,10 @@ foreach ($verProp in $byVersionProperty.Keys) {
         continue
     }
 
-    $distinctVersions = $candidates.Version | Select-Object -Unique
+    # @(...) forces array context: when only one candidate resolves, PowerShell would
+    # otherwise collapse this to a bare scalar string, which has no .Count property
+    # under Set-StrictMode.
+    $distinctVersions = @($candidates.Version | Select-Object -Unique)
     if ($distinctVersions.Count -gt 1) {
         Write-Warn "  '$verProp' package ids disagree on latest version: $($distinctVersions -join ', ') -- using the highest."
     }
