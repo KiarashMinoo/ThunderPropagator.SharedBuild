@@ -1,63 +1,16 @@
 <Project>
-  <!--
-    ═══════════════════════════════════════════════════════════════════════════
-    Shared package-identity definitions for every published ThunderPropagator
-    package. Downloaded and imported the same way as Shared.Build.props /
-    Shared.Nuget.props — see the consuming repo's own Directory.Build.props for
-    the download/validate/clean target lifecycle (DownloadSharedProps /
-    ValidateSharedProps / CleanSharedProps).
-
-    Every published package gets exactly one "{Name}PackageId" property here,
-    following the pattern:
-
-        {Name}PackageId = {Nuget.Package.Prefix}$(TpPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)
-
-    A consuming repo's own Directory.Packages.props then only needs to pin a
-    version and reference the property — never redefine the pattern locally:
-
-        <PropertyGroup>
-          <BuildingBlocksVersion>1.0.1-beta.114</BuildingBlocksVersion>
-        </PropertyGroup>
-        <ItemGroup>
-          <PackageVersion Include="$(BuildingBlocksPackageId)" Version="$(BuildingBlocksVersion)" />
-        </ItemGroup>
-
-    Add a new package by copying one line in the PropertyGroup below.
-    ═══════════════════════════════════════════════════════════════════════════
-  -->
-
-  <!--
-    Dependency-suffix resolution: identical to $(PackageIdConfigurationSuffix)
-    (Debug → ".Debug", Release → "") EXCEPT when the consuming project itself
-    builds in a "Cluster" configuration. Cluster is a core-only concept — an
-    optimized, Release-like configuration that additionally compiles in
-    Raft-based clustering support for the core package itself. No dependency
-    package listed below ever publishes a Cluster-suffixed variant of itself,
-    so a project building in Cluster configuration must still depend on the
-    ordinary Release build of everything it references. Repos that never
-    define a "Cluster" configuration are unaffected by this override —
-    $(Configuration) can never actually equal "Cluster" for them.
-  -->
-  <PropertyGroup Label="TpDependencySuffix">
-    <TpPackageIdConfigurationSuffix>$(PackageIdConfigurationSuffix)</TpPackageIdConfigurationSuffix>
-    <TpPackageIdConfigurationSuffix Condition="'$(Configuration)' == 'Cluster'"></TpPackageIdConfigurationSuffix>
+  <PropertyGroup Label="ThunderPropagatorDependencySuffix">
+    <ThunderPropagatorPackageIdConfigurationSuffix>$(PackageIdConfigurationSuffix)</ThunderPropagatorPackageIdConfigurationSuffix>
+    <ThunderPropagatorPackageIdConfigurationSuffix Condition="'$(Configuration)' == 'Cluster'"></ThunderPropagatorPackageIdConfigurationSuffix>
   </PropertyGroup>
 
   <PropertyGroup Label="ThunderPropagatorPackageIds">
-    <BuildingBlocksPackageId>ThunderPropagator.BuildingBlocks$(TpPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</BuildingBlocksPackageId>
-    <BuildingBlocksModulesPackageId>ThunderPropagator.BuildingBlocks.Modules$(TpPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</BuildingBlocksModulesPackageId>
+    <BuildingBlocksPackageId>ThunderPropagator.BuildingBlocks$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</BuildingBlocksPackageId>
+    <BuildingBlocksModulesPackageId>ThunderPropagator.BuildingBlocks.Modules$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</BuildingBlocksModulesPackageId>
 
-    <ThunderPropagatorPackageId>ThunderPropagator$(TpPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ThunderPropagatorPackageId>
-    <ThunderPropagatorApplicationPackageId>ThunderPropagator.Application$(TpPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ThunderPropagatorApplicationPackageId>
+    <ThunderPropagatorApplicationPackageId>ThunderPropagator.Application$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ThunderPropagatorApplicationPackageId>
+    <ThunderPropagatorPackageId>ThunderPropagator$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ThunderPropagatorPackageId>
 
-    <!--
-      Cluster-flavored variants of core: always ".Cluster" (plus platform
-      suffix only), regardless of the CONSUMING project's own Configuration.
-      Use these instead of the two properties above only when a repo
-      specifically needs the Raft-clustering-enabled build of core irrespective
-      of how it is itself being built (e.g. an inter-node cluster-transport
-      implementation, which always wants the clustered core contracts).
-    -->
     <ThunderPropagatorClusterPackageId>ThunderPropagator.Cluster$(PackageIdPlatformSuffix)</ThunderPropagatorClusterPackageId>
     <ThunderPropagatorApplicationClusterPackageId>ThunderPropagator.Application.Cluster$(PackageIdPlatformSuffix)</ThunderPropagatorApplicationClusterPackageId>
   </PropertyGroup>
