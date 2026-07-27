@@ -1,0 +1,5 @@
+<Project>
+  <Import Project="$(MSBuildThisFileDirectory)Shared.Build.props"/>
+  <Import Project="$(MSBuildThisFileDirectory)Shared.Nuget.props"/>
+  <Import Project="$(MSBuildThisFileDirectory)Shared.PackageIds.props"/>
+</Project>

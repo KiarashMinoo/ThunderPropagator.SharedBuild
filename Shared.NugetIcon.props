@@ -1,0 +1,31 @@
+﻿<Project>
+  <PropertyGroup>
+    <IconName>ThunderPropagator.png</IconName>
+    <IconUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/ThunderPropagator.png</IconUrl>
+    <IconPath>$(MSBuildThisFileDirectory)$(IconName)</IconPath>
+  </PropertyGroup>
+
+  <Target Name="CleanThunderPropagatorIcon" BeforeTargets="Clean">
+    <Message Importance="normal" Text="[SharedProps] Cleaning $(IconName) icon at $(IconPath)." Condition="Exists('$(IconPath)')"/>
+    <Delete Files="$(IconPath)" Condition="Exists('$(IconPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Cleaned $(IconName) icon at $(IconPath)." Condition="!Exists('$(IconPath)')"/>
+  </Target>
+
+  <Target Name="DownloadThunderPropagatorIcon" BeforeTargets="Build;Restore">
+    <MakeDir Directories="$(MSBuildThisFileDirectory)" Condition="!Exists('$(MSBuildThisFileDirectory)')"/>
+    <Message Importance="normal" Text="[SharedProps] Downloading $(IconName) icon ..." Condition="!Exists('$(IconPath)')"/>
+    <DownloadFile DestinationFileName="$(IconName)"
+                  SourceUrl="$(IconUrl)"
+                  DestinationFolder="$(MSBuildThisFileDirectory)"
+                  Condition="!Exists('$(IconPath)')"
+                  Retries="3"
+                  RetryDelayMilliseconds="2000"
+                  ContinueOnError="WarnAndContinue" />
+    <Message Importance="normal" Text="[SharedProps] $(IconName) icon already exists; skipping download." Condition="Exists('$(IconPath)')"/>
+  </Target>
+
+  <ItemGroup Label="PackageAssets">
+    <None Include="$(IconPath)" Pack="true" Link="$(IconName)" PackagePath=""/>
+  </ItemGroup>
+
+</Project>

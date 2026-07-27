@@ -1,0 +1,18 @@
+<Project>
+  <!--
+    Unlike the icon, a README is inherently per-consumer content — each repo has its own.
+    $(MSBuildThisFileDirectory) here would resolve to wherever THIS file lives once downloaded
+    (the consumer's .shared-props\ folder), not the consumer's repo root, so we can't default to
+    it the way the icon path does. Each consumer sets $(ThunderPropagatorReadmePath) in its own
+    Directory.Build.props (where $(MSBuildThisFileDirectory) correctly means repo root), before
+    importing this file. Left unset, no README is packed rather than failing the build.
+  -->
+  <PropertyGroup Label="PackageReadme">
+    <ThunderPropagatorReadmePath Condition="'$(ThunderPropagatorReadmePath)' == ''"></ThunderPropagatorReadmePath>
+  </PropertyGroup>
+
+  <ItemGroup Label="PackageAssets">
+    <!-- PackagePath="README.md" ensures consistent naming inside the package on case-sensitive Linux -->
+    <None Include="$(ThunderPropagatorReadmePath)" Condition="'$(ThunderPropagatorReadmePath)' != '' and Exists('$(ThunderPropagatorReadmePath)')" Pack="true" PackagePath="README.md"/>
+  </ItemGroup>
+</Project>

@@ -1,28 +1,6 @@
 <Project>
-  <PropertyGroup>
-    <ThunderPropagatorIconUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/ThunderPropagator.png</ThunderPropagatorIconUrl>
-    <ThunderPropagatorIconFileName>ThunderPropagator.png</ThunderPropagatorIconFileName>
-    <ThunderPropagatorIconPath>$(MSBuildThisFileDirectory)ThunderPropagator.png</ThunderPropagatorIconPath>
-  </PropertyGroup>
-
-  <Target Name="CleanThunderPropagatorIcon" BeforeTargets="Clean">
-    <Message Importance="normal" Text="[SharedProps] Cleaning ThunderPropagator icon at $(ThunderPropagatorIconPath)." Condition="Exists('$(ThunderPropagatorIconPath)')"/>
-    <Delete Files="$(ThunderPropagatorIconPath)" Condition="Exists('$(ThunderPropagatorIconPath)')"/>
-    <Message Importance="normal" Text="[SharedProps] Cleaned ThunderPropagator icon at $(ThunderPropagatorIconPath)." Condition="!Exists('$(ThunderPropagatorIconPath)')"/>
-  </Target>
-
-  <Target Name="DownloadThunderPropagatorIcon" BeforeTargets="Build;Restore">
-    <MakeDir Directories="$(MSBuildThisFileDirectory)" Condition="!Exists('$(MSBuildThisFileDirectory)')"/>
-    <Message Importance="normal" Text="[SharedProps] Downloading ThunderPropagator icon …" Condition="!Exists('$(ThunderPropagatorIconPath)')"/>
-    <DownloadFile DestinationFileName="$(ThunderPropagatorIconFileName)"
-                  SourceUrl="$(ThunderPropagatorIconUrl)"
-                  DestinationFolder="$(MSBuildThisFileDirectory)"
-                  Condition="!Exists('$(ThunderPropagatorIconPath)')"
-                  Retries="3"
-                  RetryDelayMilliseconds="2000"
-                  ContinueOnError="WarnAndContinue" />
-    <Message Importance="normal" Text="[SharedProps] ThunderPropagator icon already exists; skipping download." Condition="Exists('$(ThunderPropagatorIconPath)')"/>
-  </Target>
+  <Import Project="$(MSBuildThisFileDirectory)Shared.NugetIcon.props"/>
+  <Import Project="$(MSBuildThisFileDirectory)Shared.Readme.props"/>
 
   <PropertyGroup Label="NuGetPackageMetadata">
     <IsPackable>true</IsPackable>
@@ -33,7 +11,7 @@
     <PackageProjectUrl>https://www.thunderpropagator.com</PackageProjectUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageTags>Real-Time Data Propagation, Blazingly Fast, Cloud-Native, Data Streaming, Effortless Performance, High Impact, Real-Time Processing, Fast Data Pipelines, Cloud Solutions, ThunderPropagator, Project ARC</PackageTags>
-    <PackageIcon>$(ThunderPropagatorIconFileName)</PackageIcon>
+    <PackageIcon>$(IconName)</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <AvoidCycleErrorOnSelfReference>true</AvoidCycleErrorOnSelfReference>
   </PropertyGroup>
@@ -51,12 +29,6 @@
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
-
-  <ItemGroup Label="PackageAssets">
-    <!-- PackagePath="README.md" ensures consistent naming inside the package on case-sensitive Linux -->
-    <None Include="$(MSBuildThisFileDirectory)ReadMe.md" Pack="true" PackagePath="README.md" />
-    <None Include="$(ThunderPropagatorIconPath)" Pack="true" Link="$(ThunderPropagatorIconFileName)" PackagePath=""/>
-  </ItemGroup>
 
   <!--
     Supply chain: enable NuGet restore-time vulnerability auditing.
