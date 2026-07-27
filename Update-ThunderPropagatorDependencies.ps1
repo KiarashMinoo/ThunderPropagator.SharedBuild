@@ -113,44 +113,56 @@ function Get-VersionSortKey {
     catch { $null }
 }
 
+$script:FlatContainerBaseUrlCache = @{}
+
+function Get-FlatContainerBaseUrl {
+    # Resolves the "PackageBaseAddress/3.0.0" resource from a v3 service index. This is the
+    # NuGet flat-container API: GET {base}/{id-lower}/index.json returns { "versions": [...] },
+    # the complete list of every version ever published for that package -- no paging, no
+    # relevance ranking, no result-count cap. Cached per source since every package lookup
+    # against the same $Source shares one service index.
+    param([string]$SourceUrl)
+
+    if ($script:FlatContainerBaseUrlCache.ContainsKey($SourceUrl)) {
+        return $script:FlatContainerBaseUrlCache[$SourceUrl]
+    }
+
+    $index    = Invoke-RestMethod -Uri $SourceUrl -ErrorAction Stop
+    $resource = $index.resources | Where-Object { $_.'@type' -like 'PackageBaseAddress/*' } | Select-Object -First 1
+    if (-not $resource) {
+        throw "No 'PackageBaseAddress' resource found in service index '$SourceUrl' -- is this a valid v3 NuGet feed?"
+    }
+
+    $base = $resource.'@id'.TrimEnd('/')
+    $script:FlatContainerBaseUrlCache[$SourceUrl] = $base
+    return $base
+}
+
 function Get-LatestPackageVersion {
+    # Deliberately NOT "dotnet package search": that queries a relevance-ranked search index
+    # which pages its results (a default page size, not every published version) and doesn't
+    # guarantee version-descending order within that page. For a package with many prerelease
+    # versions, the true latest can fall outside the returned page -- observed in practice as
+    # this function returning an OLDER version than what's already pinned (a regression), and
+    # returning a DIFFERENT wrong answer across repeated calls. The flat-container endpoint
+    # below returns the complete, deterministic version list instead, so sorting it is reliable.
+    #
+    # Trade-off: flat-container includes unlisted versions (search excludes them by default).
+    # Acceptable here since this only ever targets this repo's own family packages.
     param([string]$PackageId, [string]$SourceUrl)
 
-    $json = dotnet package search $PackageId --exact-match --prerelease --source $SourceUrl --format json 2>$null
-    if ($LASTEXITCODE -ne 0 -or -not $json) {
-        Write-Warn "  '$PackageId': search failed (exit $LASTEXITCODE) -- skipping"
+    try {
+        $base       = Get-FlatContainerBaseUrl -SourceUrl $SourceUrl
+        $idLower    = $PackageId.ToLowerInvariant()
+        $versionDoc = Invoke-RestMethod -Uri "$base/$idLower/index.json" -ErrorAction Stop
+    } catch {
+        Write-Warn "  '$PackageId': version list lookup failed against '$SourceUrl' ($($_.Exception.Message)) -- skipping"
         return $null
     }
 
-    $parsed = $json | ConvertFrom-Json -ErrorAction SilentlyContinue
-    if (-not $parsed) {
-        Write-Warn "  '$PackageId': could not parse search output -- skipping"
-        return $null
-    }
-
-    $matched = $parsed.searchResult |
-               ForEach-Object { $_.packages } |
-               Where-Object { $_.id -ieq $PackageId }
-
-    if (-not $matched) {
-        Write-Warn "  '$PackageId': not found on '$SourceUrl' -- skipping"
-        return $null
-    }
-
-    # --exact-match changes the search-result shape: an unqualified search returns one
-    # summary entry per package with a "latestVersion" field, but --exact-match instead
-    # returns one entry PER PUBLISHED VERSION, each carrying a "version" field (no
-    # "latestVersion" at all). Accept either shape -- via PSObject.Properties so a
-    # missing property returns $null instead of throwing under Set-StrictMode -- and
-    # take the highest version across every entry returned.
-    $versions = foreach ($pkg in $matched) {
-        $prop = $pkg.PSObject.Properties['latestVersion']
-        if (-not $prop) { $prop = $pkg.PSObject.Properties['version'] }
-        if ($prop) { $prop.Value }
-    }
-
+    $versions = $versionDoc.versions
     if (-not $versions) {
-        Write-Warn "  '$PackageId': search result had neither 'latestVersion' nor 'version' -- skipping"
+        Write-Warn "  '$PackageId': no published versions found on '$SourceUrl' -- skipping"
         return $null
     }
 
