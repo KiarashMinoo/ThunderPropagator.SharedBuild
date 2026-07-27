@@ -12,14 +12,19 @@
     <Message Importance="normal" Text="[SharedProps] Cleaned $(ScriptName) script at $(ScriptPath)." Condition="!Exists('$(ScriptPath)')"/>
   </Target>
 
-  <Target Name="DownloadScript" BeforeTargets="Build;Restore">
+  <Target Name="DownloadScript" BeforeTargets="Restore">
     <MakeDir Directories="$(ScriptsPath)" Condition="!Exists('$(ScriptsPath)')"/>
-    <Message Importance="normal" Text="[SharedProps] Downloading $(ScriptName) script ..." Condition="!Exists('$(ScriptPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Downloading $(ScriptName) script ..."/>
     <DownloadFile DestinationFileName="$(ScriptName)"
                   SourceUrl="$(ScriptUrl)"
                   DestinationFolder="$(ScriptsPath)"
-                  Condition="!Exists('$(ScriptPath)')"
-                  ContinueOnError="WarnAndContinue"/>
-    <Message Importance="normal" Text="[SharedProps] $(ScriptName) already exists; skipping download." Condition="Exists('$(ScriptPath)')"/>
+                  Retries="3"
+                  RetryDelayMilliseconds="2000" />
+  </Target>
+
+  <Target Name="RunDependencyUpdater" AfterTargets="DownloadScript" BeforeTargets="Restore" Condition="Exists('$(ScriptPath)')">
+    <Message Importance="normal" Text="[SharedProps] Checking ThunderPropagator dependency versions via $(ScriptPath) ..."/>
+    <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(ScriptPath)&quot; -Check"
+          ContinueOnError="WarnAndContinue"/>
   </Target>
 </Project>
