@@ -10,9 +10,10 @@ With ThunderPropagator, from stock and financial feeds to audio, news, video, an
 
 ## Key capabilities
 
-- **Repository standards:** documented implementation and contracts are available in the linked documentation area.
-- **Build automation:** documented implementation and contracts are available in the linked documentation area.
-- **Documentation:** documented implementation and contracts are available in the linked documentation area.
+- **Build defaults:** centralizes target frameworks, compiler settings, and continuous-integration behavior.
+- **Package conventions:** standardizes NuGet identity, metadata, icons, and pack-on-build behavior.
+- **Code style:** applies consistent formatting and language conventions across consuming repositories.
+- **Analyzer policy:** shares diagnostics and quality gates across the ThunderPropagator ecosystem.
 
 ## Technology
 
