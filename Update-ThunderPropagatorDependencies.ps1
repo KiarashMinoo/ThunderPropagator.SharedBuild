@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
     Bump every ThunderPropagator-family PackageVersion in a repo's Directory.Packages.props
-    to the latest version published on GitHub Packages -- prerelease/beta included.
+    to the latest version published on nuget.org -- prerelease/beta included.
 
 .DESCRIPTION
     Lives in ThunderPropagator.SharedBuild and is downloaded into every consuming repo's
@@ -19,6 +19,9 @@
     the "$(XxxPackageId)" convention works with this script unmodified -- nothing here is
     specific to any one consuming repo.
 
+    nuget.org is a public feed with no auth required, so no token or source registration
+    is needed -- this queries "$Source" directly regardless of what's in NuGet.Config.
+
 .PARAMETER PropsPath
     Path to the target repo's Directory.Packages.props.
     Defaults to the file one directory above this script (i.e. the repo root, since this
@@ -27,11 +30,8 @@
 .PARAMETER SharedPackageIdsPath
     Path to Shared.PackageIds.props. Defaults to the copy sitting next to this script.
 
-.PARAMETER Owner
-    GitHub org/user whose Packages feed hosts the ThunderPropagator packages.
-
-.PARAMETER GitHubToken
-    PAT with read:packages scope. Falls back to GH_TOKEN then GITHUB_TOKEN.
+.PARAMETER Source
+    NuGet v3 service index to search. Defaults to nuget.org.
 
 .PARAMETER Check
     Print current vs. latest version for every discovered dependency and exit without writing.
@@ -45,28 +45,15 @@
 
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [string] $PropsPath             = "",
-    [string] $SharedPackageIdsPath  = "",
-    [string] $Owner                = "KiarashMinoo",
-    [string] $GitHubToken           = "",
+    [string] $PropsPath            = "",
+    [string] $SharedPackageIdsPath = "",
+    [string] $Source               = "https://api.nuget.org/v3/index.json",
     [switch] $Check
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference    = 'SilentlyContinue'
-
-# ── Resolve GitHub token (GH_TOKEN takes precedence over GITHUB_TOKEN) ────────
-
-if ([string]::IsNullOrWhiteSpace($GitHubToken)) {
-    $GitHubToken = if ($env:GH_TOKEN) { $env:GH_TOKEN }
-                   elseif ($env:GITHUB_TOKEN) { $env:GITHUB_TOKEN }
-                   else { "" }
-}
-
-if ([string]::IsNullOrWhiteSpace($GitHubToken)) {
-    throw "No GitHub token found. Set GH_TOKEN (or GITHUB_TOKEN) or pass -GitHubToken -- read:packages scope is required to search GitHub Packages."
-}
 
 # ── Resolve paths (this script normally sits in <repo>\.shared-props\) ───────
 
@@ -176,33 +163,17 @@ if ($byVersionProperty.Count -eq 0 -and $byLiteralEntry.Count -eq 0) {
     exit 0
 }
 
-# ── Ensure the GitHub Packages source is registered for this feed ────────────
-
-$sourceName = "github-$Owner"
-$sourceUrl  = "https://nuget.pkg.github.com/$Owner/index.json"
-
-$existingSources = dotnet nuget list source --format short 2>$null
-if (-not ($existingSources -match [regex]::Escape($sourceUrl))) {
-    Write-Step "Registering NuGet source '$sourceName' ($sourceUrl)..."
-    if ($PSCmdlet.ShouldProcess($sourceUrl, "dotnet nuget add source")) {
-        dotnet nuget add source $sourceUrl `
-            --name $sourceName `
-            --username $Owner `
-            --password $GitHubToken `
-            --store-password-in-clear-text | Out-Null
-    }
-} else {
-    Write-Ok "NuGet source for '$sourceUrl' already registered."
-}
-
 # ── Banner ────────────────────────────────────────────────────────────────────
+# nuget.org is public and needs no auth or source registration -- $Source is
+# queried directly via "dotnet package search --source", independent of
+# whatever sources are configured in this repo's own NuGet.Config.
 
 Write-Host ""
 Write-Host "ThunderPropagator Dependency Updater" -ForegroundColor White
-Write-Host "  Props    : $PropsPath"
+Write-Host "  Props      : $PropsPath"
 Write-Host "  PackageIds : $SharedPackageIdsPath"
-Write-Host "  Source   : $sourceUrl"
-Write-Host "  Mode     : $(if ($Check) { 'check only' } else { 'update' })"
+Write-Host "  Source     : $Source"
+Write-Host "  Mode       : $(if ($Check) { 'check only' } else { 'update' })"
 Write-Host ""
 
 # ── Resolve latest version per discovered dependency ──────────────────────────
@@ -215,7 +186,7 @@ foreach ($verProp in $byVersionProperty.Keys) {
     Write-Step "Resolving '$verProp' from: $($literalIds -join ', ')"
 
     $candidates = foreach ($id in $literalIds) {
-        $v = Get-LatestPackageVersion -PackageId $id -SourceUrl $sourceUrl
+        $v = Get-LatestPackageVersion -PackageId $id -SourceUrl $Source
         if ($v) { [pscustomobject]@{ PackageId = $id; Version = $v } }
     }
 
@@ -251,7 +222,7 @@ foreach ($verProp in $byVersionProperty.Keys) {
 
 foreach ($entry in $byLiteralEntry) {
     Write-Step "Resolving literal-pinned '$($entry.LiteralId)'"
-    $latest = Get-LatestPackageVersion -PackageId $entry.LiteralId -SourceUrl $sourceUrl
+    $latest = Get-LatestPackageVersion -PackageId $entry.LiteralId -SourceUrl $Source
     if (-not $latest) { continue }
 
     if ($entry.Current -eq $latest) {
