@@ -11,6 +11,10 @@
     <ThunderPropagatorReadmePath Condition="'$(ThunderPropagatorReadmePath)' == ''"></ThunderPropagatorReadmePath>
   </PropertyGroup>
 
+  <!-- Guarded by both an emptiness check and Exists() so an unset or stale path is silently
+       skipped instead of failing the pack — see Shared.Nuget.props for the matching
+       PackageReadmeFile guard that keeps NuGet from expecting a file that was never packed. -->
+
   <ItemGroup Label="PackageAssets">
     <!-- PackagePath="README.md" ensures consistent naming inside the package on case-sensitive Linux -->
     <None Include="$(ThunderPropagatorReadmePath)" Condition="'$(ThunderPropagatorReadmePath)' != '' and Exists('$(ThunderPropagatorReadmePath)')" Pack="true" PackagePath="README.md"/>

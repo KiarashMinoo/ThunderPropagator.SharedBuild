@@ -1,9 +1,22 @@
 <Project>
+  <!--
+    One {Name}PackageId property per published family package, so a consumer's central
+    package-management file references the pattern (Include="$({Name}PackageId)") instead
+    of redefining it. The dependency-updater script (Update-ThunderPropagatorDependencies.ps1)
+    reads this file to auto-discover every entry it should keep up to date.
+  -->
+
+  <!-- Cluster already gets its own ".Cluster"-suffixed ids below, so it must not also pick
+       up a stray ".Debug"/platform suffix from a consumer building under a Configuration
+       named "Cluster". -->
   <PropertyGroup Label="ThunderPropagatorDependencySuffix">
     <ThunderPropagatorPackageIdConfigurationSuffix>$(PackageIdConfigurationSuffix)</ThunderPropagatorPackageIdConfigurationSuffix>
     <ThunderPropagatorPackageIdConfigurationSuffix Condition="'$(Configuration)' == 'Cluster'"></ThunderPropagatorPackageIdConfigurationSuffix>
   </PropertyGroup>
 
+  <!-- No family package publishes a bare ".Cluster"-suffixed id combined with a platform
+       suffix beyond what's listed here — don't add one without also adding the matching
+       package publish step. -->
   <PropertyGroup Label="ThunderPropagatorPackageIds">
     <BuildingBlocksPackageId>ThunderPropagator.BuildingBlocks$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</BuildingBlocksPackageId>
     <BuildingBlocksModulesPackageId>ThunderPropagator.BuildingBlocks.Modules$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</BuildingBlocksModulesPackageId>

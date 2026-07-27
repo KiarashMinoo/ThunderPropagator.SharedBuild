@@ -1,6 +1,70 @@
 <Project>
-  <Import Project="$(MSBuildThisFileDirectory)Shared.NugetIcon.props"/>
-  <Import Project="$(MSBuildThisFileDirectory)Shared.Readme.props"/>
+  <!--
+    Packaging-metadata half of the SDK-wide/packaging split described in CLAUDE.md.
+    Pulls in the icon and README handling as separate concerns, then layers on the
+    package metadata, id-suffixing, and audit settings every family package shares.
+
+    Shared.NugetIcon.props and Shared.NugetReadme.props are downloaded here (next to this
+    file) before being imported, so a consumer only has to bootstrap this one file and the
+    rest cascades automatically — mirroring how each of those files self-downloads its own
+    asset (the icon PNG / nothing, respectively).
+
+    CAVEAT: MSBuild resolves <Import> eagerly during project evaluation, before any Target
+    (including the download below) has run. On a brand-new clone with neither file present
+    yet, this evaluation pass imports nothing — the download below still fetches both files
+    for next time, but this particular build proceeds without the icon/readme metadata. A
+    second restore/build picks them up normally. This is an inherent MSBuild limitation
+    (imports are static, downloads are not), not a bug.
+  -->
+  <PropertyGroup Label="SharedNugetImportSources">
+    <SharedPropsBaseUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/</SharedPropsBaseUrl>
+    <SharedNugetIconPropsPath>$(MSBuildThisFileDirectory)Shared.NugetIcon.props</SharedNugetIconPropsPath>
+    <SharedNugetReadmePropsPath>$(MSBuildThisFileDirectory)Shared.NugetReadme.props</SharedNugetReadmePropsPath>
+  </PropertyGroup>
+
+  <!-- Both messages must be evaluated (and thus placed) before Delete runs — Delete itself
+       changes what Exists() returns, so a message conditioned on it placed afterwards would
+       misreport its own result. -->
+  <Target Name="CleanSharedNugetImports" BeforeTargets="Clean">
+    <Message Importance="normal" Text="[SharedProps] Deleting Shared.NugetIcon.props at $(SharedNugetIconPropsPath) ..." Condition="Exists('$(SharedNugetIconPropsPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] No Shared.NugetIcon.props present at $(SharedNugetIconPropsPath); nothing to clean." Condition="!Exists('$(SharedNugetIconPropsPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Deleting Shared.NugetReadme.props at $(SharedNugetReadmePropsPath) ..." Condition="Exists('$(SharedNugetReadmePropsPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] No Shared.NugetReadme.props present at $(SharedNugetReadmePropsPath); nothing to clean." Condition="!Exists('$(SharedNugetReadmePropsPath)')"/>
+    <Delete Files="$(SharedNugetIconPropsPath)" Condition="Exists('$(SharedNugetIconPropsPath)')"/>
+    <Delete Files="$(SharedNugetReadmePropsPath)" Condition="Exists('$(SharedNugetReadmePropsPath)')"/>
+  </Target>
+
+  <!-- Downloaded one after another (not in parallel): both are small text files, so the
+       simplicity of a plain sequential fetch outweighs the complexity of orchestrating real
+       concurrency here. -->
+  <Target Name="DownloadSharedNugetImports" BeforeTargets="Build;Restore">
+    <MakeDir Directories="$(MSBuildThisFileDirectory)" Condition="!Exists('$(MSBuildThisFileDirectory)')"/>
+
+    <Message Importance="normal" Text="[SharedProps] Shared.NugetIcon.props already present at $(SharedNugetIconPropsPath); skipping download." Condition="Exists('$(SharedNugetIconPropsPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Downloading Shared.NugetIcon.props from $(SharedPropsBaseUrl)Shared.NugetIcon.props (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(SharedNugetIconPropsPath)')"/>
+    <DownloadFile DestinationFileName="Shared.NugetIcon.props"
+                  SourceUrl="$(SharedPropsBaseUrl)Shared.NugetIcon.props"
+                  DestinationFolder="$(MSBuildThisFileDirectory)"
+                  Condition="!Exists('$(SharedNugetIconPropsPath)')"
+                  Retries="3"
+                  RetryDelayMilliseconds="2000"
+                  ContinueOnError="WarnAndContinue"/>
+    <Message Importance="high" Text="[SharedProps] Could not download Shared.NugetIcon.props after 3 attempts; icon packaging is skipped until a later restore succeeds." Condition="!Exists('$(SharedNugetIconPropsPath)')"/>
+
+    <Message Importance="normal" Text="[SharedProps] Shared.NugetReadme.props already present at $(SharedNugetReadmePropsPath); skipping download." Condition="Exists('$(SharedNugetReadmePropsPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Downloading Shared.NugetReadme.props from $(SharedPropsBaseUrl)Shared.NugetReadme.props (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(SharedNugetReadmePropsPath)')"/>
+    <DownloadFile DestinationFileName="Shared.NugetReadme.props"
+                  SourceUrl="$(SharedPropsBaseUrl)Shared.NugetReadme.props"
+                  DestinationFolder="$(MSBuildThisFileDirectory)"
+                  Condition="!Exists('$(SharedNugetReadmePropsPath)')"
+                  Retries="3"
+                  RetryDelayMilliseconds="2000"
+                  ContinueOnError="WarnAndContinue"/>
+    <Message Importance="high" Text="[SharedProps] Could not download Shared.NugetReadme.props after 3 attempts; readme packaging is skipped until a later restore succeeds." Condition="!Exists('$(SharedNugetReadmePropsPath)')"/>
+  </Target>
+
+  <Import Project="$(SharedNugetIconPropsPath)" Condition="Exists('$(SharedNugetIconPropsPath)')"/>
+  <Import Project="$(SharedNugetReadmePropsPath)" Condition="Exists('$(SharedNugetReadmePropsPath)')"/>
 
   <PropertyGroup Label="NuGetPackageMetadata">
     <IsPackable>true</IsPackable>
@@ -11,11 +75,15 @@
     <PackageProjectUrl>https://www.thunderpropagator.com</PackageProjectUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageTags>Real-Time Data Propagation, Blazingly Fast, Cloud-Native, Data Streaming, Effortless Performance, High Impact, Real-Time Processing, Fast Data Pipelines, Cloud Solutions, ThunderPropagator, Project ARC</PackageTags>
-    <PackageIcon>$(IconName)</PackageIcon>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- Only point NuGet at the icon/readme once the corresponding file is actually
+         going to be packed — otherwise a failed icon download or an unset readme
+         path makes `dotnet pack` fail with NU5046/NU5039 instead of just skipping it. -->
+    <PackageIcon Condition="Exists('$(IconPath)')">$(IconName)</PackageIcon>
+    <PackageReadmeFile Condition="'$(ThunderPropagatorReadmePath)' != '' and Exists('$(ThunderPropagatorReadmePath)')">README.md</PackageReadmeFile>
     <AvoidCycleErrorOnSelfReference>true</AvoidCycleErrorOnSelfReference>
   </PropertyGroup>
 
+  <!-- Consumer-overridable: only fill in a suffix when the consumer hasn't already set one. -->
   <PropertyGroup Label="PackageIdSuffixing">
     <PackageIdConfigurationSuffix Condition="'$(PackageIdConfigurationSuffix)' == '' and '$(Configuration)' == 'Debug'">.Debug</PackageIdConfigurationSuffix>
     <PackageIdPlatformSuffix Condition="'$(PackageIdPlatformSuffix)' == '' and '$(Platform)' != '' and '$(Platform)' != 'AnyCPU'">.$(Platform)</PackageIdPlatformSuffix>

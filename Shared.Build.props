@@ -1,4 +1,8 @@
 <Project>
+  <!--
+    Pure build/compiler-defaults half of the SDK-wide/packaging split described in
+    CLAUDE.md — no NuGet metadata here, see Shared.Nuget.props for that.
+  -->
   <PropertyGroup Label="DefaultBuildContext">
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>
@@ -20,6 +24,8 @@
     <DebugType>None</DebugType>
     <DefineConstants/>
   </PropertyGroup>
+  <!-- Deterministic, embeddable PDB paths for reproducible CI builds; harmless locally
+       since it only activates under GitHub Actions. -->
   <PropertyGroup Label="CiBuildSettings" Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild Condition="'$(ContinuousIntegrationBuild)' == ''">true</ContinuousIntegrationBuild>
   </PropertyGroup>

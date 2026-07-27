@@ -1,31 +1,44 @@
 ﻿<Project>
+  <!--
+    Self-contained icon handling: downloads the shared ThunderPropagator brand image
+    next to this file (best-effort, never fails a build) and packs it into every
+    consumer's NuGet package, so consumers don't vendor the image themselves.
+  -->
   <PropertyGroup>
     <IconName>ThunderPropagator.png</IconName>
     <IconUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/ThunderPropagator.png</IconUrl>
     <IconPath>$(MSBuildThisFileDirectory)$(IconName)</IconPath>
   </PropertyGroup>
 
+  <!-- Both messages must be evaluated (and thus placed) before Delete runs — Delete itself
+       changes what Exists() returns, so a message conditioned on it placed afterwards would
+       misreport its own result. -->
   <Target Name="CleanThunderPropagatorIcon" BeforeTargets="Clean">
-    <Message Importance="normal" Text="[SharedProps] Cleaning $(IconName) icon at $(IconPath)." Condition="Exists('$(IconPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Deleting $(IconName) icon at $(IconPath) ..." Condition="Exists('$(IconPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] No $(IconName) icon present at $(IconPath); nothing to clean." Condition="!Exists('$(IconPath)')"/>
     <Delete Files="$(IconPath)" Condition="Exists('$(IconPath)')"/>
-    <Message Importance="normal" Text="[SharedProps] Cleaned $(IconName) icon at $(IconPath)." Condition="!Exists('$(IconPath)')"/>
   </Target>
 
+  <!-- Runs on both Build and Restore (unlike the dependency-updater script, which is
+       Restore-only) because the icon must exist by pack time, and a plain `dotnet build`
+       with no prior restore still needs to produce a valid package. -->
   <Target Name="DownloadThunderPropagatorIcon" BeforeTargets="Build;Restore">
     <MakeDir Directories="$(MSBuildThisFileDirectory)" Condition="!Exists('$(MSBuildThisFileDirectory)')"/>
-    <Message Importance="normal" Text="[SharedProps] Downloading $(IconName) icon ..." Condition="!Exists('$(IconPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] $(IconName) already present at $(IconPath); skipping download." Condition="Exists('$(IconPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Downloading $(IconName) icon from $(IconUrl) (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(IconPath)')"/>
     <DownloadFile DestinationFileName="$(IconName)"
                   SourceUrl="$(IconUrl)"
                   DestinationFolder="$(MSBuildThisFileDirectory)"
                   Condition="!Exists('$(IconPath)')"
                   Retries="3"
                   RetryDelayMilliseconds="2000"
-                  ContinueOnError="WarnAndContinue" />
-    <Message Importance="normal" Text="[SharedProps] $(IconName) icon already exists; skipping download." Condition="Exists('$(IconPath)')"/>
+                  ContinueOnError="WarnAndContinue"/>
+    <Message Importance="high" Text="[SharedProps] Could not download $(IconName) after 3 attempts; continuing without a PackageIcon for this build." Condition="!Exists('$(IconPath)')"/>
   </Target>
 
+  <!-- Condition="Exists(...)" keeps a failed best-effort download from breaking `dotnet pack`
+       (Copy/Pack would otherwise fail trying to include a file that was never downloaded). -->
   <ItemGroup Label="PackageAssets">
-    <None Include="$(IconPath)" Pack="true" Link="$(IconName)" PackagePath=""/>
+    <None Include="$(IconPath)" Pack="true" Link="$(IconName)" PackagePath="" Condition="Exists('$(IconPath)')"/>
   </ItemGroup>
-
 </Project>

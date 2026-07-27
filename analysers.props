@@ -1,4 +1,10 @@
 <Project>
+  <!--
+    Turns on .NET analyzers and treats analyzer/compiler warnings as errors. Consumed the
+    same way every family repo consumes its own copy (see Directory.Build.targets, which
+    auto-imports this file into every project without touching that project's own csproj).
+    Every property is guarded so a consumer that already set one keeps its own value.
+  -->
   <PropertyGroup>
     <EnableNETAnalyzers Condition="'$(EnableNETAnalyzers)' == ''">true</EnableNETAnalyzers>
     <AnalysisLevel Condition="'$(AnalysisLevel)' == ''">latest-recommended</AnalysisLevel>

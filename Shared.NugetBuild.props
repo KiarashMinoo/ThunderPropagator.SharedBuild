@@ -1,5 +1,85 @@
 <Project>
-  <Import Project="$(MSBuildThisFileDirectory)Shared.Build.props"/>
-  <Import Project="$(MSBuildThisFileDirectory)Shared.Nuget.props"/>
-  <Import Project="$(MSBuildThisFileDirectory)Shared.PackageIds.props"/>
+  <!--
+    The single combined entry point consumers import directly: SDK-wide compiler/target
+    settings (Shared.Build.props), NuGet package metadata (Shared.Nuget.props), and the
+    family package-id properties (Shared.PackageIds.props). Consumers who want the two
+    build/packaging concerns split can import Shared.Build.props and Shared.Nuget.props
+    individually instead.
+
+    All three are downloaded here (next to this file) before being imported, so a consumer
+    only has to bootstrap this one file and the rest cascades automatically (Shared.Nuget.props
+    then does the same for Shared.NugetIcon.props/Shared.NugetReadme.props).
+
+    CAVEAT: MSBuild resolves <Import> eagerly during project evaluation, before any Target
+    (including the download below) has run. On a brand-new clone with none of these files
+    present yet, this evaluation pass imports nothing — the download below still fetches all
+    three for next time, but this particular build proceeds with none of these settings. A
+    second restore/build picks them up normally. This is an inherent MSBuild limitation
+    (imports are static, downloads are not), not a bug.
+  -->
+  <PropertyGroup Label="SharedBuildImportSources">
+    <SharedPropsBaseUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/</SharedPropsBaseUrl>
+    <SharedBuildPropsPath>$(MSBuildThisFileDirectory)Shared.Build.props</SharedBuildPropsPath>
+    <SharedNugetPropsPath>$(MSBuildThisFileDirectory)Shared.Nuget.props</SharedNugetPropsPath>
+    <SharedPackageIdsPropsPath>$(MSBuildThisFileDirectory)Shared.PackageIds.props</SharedPackageIdsPropsPath>
+  </PropertyGroup>
+
+  <!-- Every message must be evaluated (and thus placed) before Delete runs — Delete itself
+       changes what Exists() returns, so a message conditioned on it placed afterwards would
+       misreport its own result. -->
+  <Target Name="CleanSharedBuildImports" BeforeTargets="Clean">
+    <Message Importance="normal" Text="[SharedProps] Deleting Shared.Build.props at $(SharedBuildPropsPath) ..." Condition="Exists('$(SharedBuildPropsPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] No Shared.Build.props present at $(SharedBuildPropsPath); nothing to clean." Condition="!Exists('$(SharedBuildPropsPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Deleting Shared.Nuget.props at $(SharedNugetPropsPath) ..." Condition="Exists('$(SharedNugetPropsPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] No Shared.Nuget.props present at $(SharedNugetPropsPath); nothing to clean." Condition="!Exists('$(SharedNugetPropsPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Deleting Shared.PackageIds.props at $(SharedPackageIdsPropsPath) ..." Condition="Exists('$(SharedPackageIdsPropsPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] No Shared.PackageIds.props present at $(SharedPackageIdsPropsPath); nothing to clean." Condition="!Exists('$(SharedPackageIdsPropsPath)')"/>
+    <Delete Files="$(SharedBuildPropsPath)" Condition="Exists('$(SharedBuildPropsPath)')"/>
+    <Delete Files="$(SharedNugetPropsPath)" Condition="Exists('$(SharedNugetPropsPath)')"/>
+    <Delete Files="$(SharedPackageIdsPropsPath)" Condition="Exists('$(SharedPackageIdsPropsPath)')"/>
+  </Target>
+
+  <!-- Downloaded one after another (not in parallel): all three are small text files, so the
+       simplicity of a plain sequential fetch outweighs the complexity of orchestrating real
+       concurrency here. -->
+  <Target Name="DownloadSharedBuildImports" BeforeTargets="Build;Restore">
+    <MakeDir Directories="$(MSBuildThisFileDirectory)" Condition="!Exists('$(MSBuildThisFileDirectory)')"/>
+
+    <Message Importance="normal" Text="[SharedProps] Shared.Build.props already present at $(SharedBuildPropsPath); skipping download." Condition="Exists('$(SharedBuildPropsPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Downloading Shared.Build.props from $(SharedPropsBaseUrl)Shared.Build.props (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(SharedBuildPropsPath)')"/>
+    <DownloadFile DestinationFileName="Shared.Build.props"
+                  SourceUrl="$(SharedPropsBaseUrl)Shared.Build.props"
+                  DestinationFolder="$(MSBuildThisFileDirectory)"
+                  Condition="!Exists('$(SharedBuildPropsPath)')"
+                  Retries="3"
+                  RetryDelayMilliseconds="2000"
+                  ContinueOnError="WarnAndContinue"/>
+    <Message Importance="high" Text="[SharedProps] Could not download Shared.Build.props after 3 attempts; SDK-wide compiler/target defaults are skipped until a later restore succeeds." Condition="!Exists('$(SharedBuildPropsPath)')"/>
+
+    <Message Importance="normal" Text="[SharedProps] Shared.Nuget.props already present at $(SharedNugetPropsPath); skipping download." Condition="Exists('$(SharedNugetPropsPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Downloading Shared.Nuget.props from $(SharedPropsBaseUrl)Shared.Nuget.props (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(SharedNugetPropsPath)')"/>
+    <DownloadFile DestinationFileName="Shared.Nuget.props"
+                  SourceUrl="$(SharedPropsBaseUrl)Shared.Nuget.props"
+                  DestinationFolder="$(MSBuildThisFileDirectory)"
+                  Condition="!Exists('$(SharedNugetPropsPath)')"
+                  Retries="3"
+                  RetryDelayMilliseconds="2000"
+                  ContinueOnError="WarnAndContinue"/>
+    <Message Importance="high" Text="[SharedProps] Could not download Shared.Nuget.props after 3 attempts; NuGet package metadata is skipped until a later restore succeeds." Condition="!Exists('$(SharedNugetPropsPath)')"/>
+
+    <Message Importance="normal" Text="[SharedProps] Shared.PackageIds.props already present at $(SharedPackageIdsPropsPath); skipping download." Condition="Exists('$(SharedPackageIdsPropsPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Downloading Shared.PackageIds.props from $(SharedPropsBaseUrl)Shared.PackageIds.props (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(SharedPackageIdsPropsPath)')"/>
+    <DownloadFile DestinationFileName="Shared.PackageIds.props"
+                  SourceUrl="$(SharedPropsBaseUrl)Shared.PackageIds.props"
+                  DestinationFolder="$(MSBuildThisFileDirectory)"
+                  Condition="!Exists('$(SharedPackageIdsPropsPath)')"
+                  Retries="3"
+                  RetryDelayMilliseconds="2000"
+                  ContinueOnError="WarnAndContinue"/>
+    <Message Importance="high" Text="[SharedProps] Could not download Shared.PackageIds.props after 3 attempts; family package-id properties are skipped until a later restore succeeds." Condition="!Exists('$(SharedPackageIdsPropsPath)')"/>
+  </Target>
+
+  <Import Project="$(SharedBuildPropsPath)" Condition="Exists('$(SharedBuildPropsPath)')"/>
+  <Import Project="$(SharedNugetPropsPath)" Condition="Exists('$(SharedNugetPropsPath)')"/>
+  <Import Project="$(SharedPackageIdsPropsPath)" Condition="Exists('$(SharedPackageIdsPropsPath)')"/>
 </Project>

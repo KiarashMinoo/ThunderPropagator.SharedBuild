@@ -1,4 +1,12 @@
 <Project>
+  <!--
+    Wires the optional dependency-updater script into a consumer's restore pipeline as a
+    report-only, pre-restore check: DownloadScript fetches the script (or reuses a consumer's
+    own committed copy under .github/scripts/ — see the path comment below), and
+    RunDependencyUpdater then runs it with -Check, which only prints current-vs-latest
+    versions and never mutates a tracked file. Both targets are Restore-only and every
+    failure is a warning, so a network hiccup or script error never breaks the build.
+  -->
   <PropertyGroup>
     <ScriptName>Update-ThunderPropagatorDependencies.ps1</ScriptName>
     <ScriptUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/$(ScriptName)</ScriptUrl>
@@ -8,15 +16,19 @@
     <ScriptPath>$(ScriptsPath)$(ScriptName)</ScriptPath>
   </PropertyGroup>
 
+  <!-- Both messages must be evaluated (and thus placed) before Delete runs — Delete itself
+       changes what Exists() returns, so a message conditioned on it placed afterwards would
+       misreport its own result. -->
   <Target Name="CleanScript" BeforeTargets="Clean">
-    <Message Importance="normal" Text="[SharedProps] Cleaning $(ScriptName) script at $(ScriptPath)." Condition="Exists('$(ScriptPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Deleting $(ScriptName) script at $(ScriptPath) ..." Condition="Exists('$(ScriptPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] No $(ScriptName) script present at $(ScriptPath); nothing to clean." Condition="!Exists('$(ScriptPath)')"/>
     <Delete Files="$(ScriptPath)" Condition="Exists('$(ScriptPath)')"/>
-    <Message Importance="normal" Text="[SharedProps] Cleaned $(ScriptName) script at $(ScriptPath)." Condition="!Exists('$(ScriptPath)')"/>
   </Target>
 
   <Target Name="DownloadScript" BeforeTargets="Restore">
     <MakeDir Directories="$(ScriptsPath)" Condition="!Exists('$(ScriptsPath)')"/>
-    <Message Importance="normal" Text="[SharedProps] Downloading $(ScriptName) script ..." Condition="!Exists('$(ScriptPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] $(ScriptName) already present at $(ScriptPath); skipping download." Condition="Exists('$(ScriptPath)')"/>
+    <Message Importance="normal" Text="[SharedProps] Downloading $(ScriptName) from $(ScriptUrl) (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(ScriptPath)')"/>
     <DownloadFile DestinationFileName="$(ScriptName)"
                   SourceUrl="$(ScriptUrl)"
                   DestinationFolder="$(ScriptsPath)"
@@ -24,12 +36,17 @@
                   Retries="3"
                   RetryDelayMilliseconds="2000"
                   ContinueOnError="WarnAndContinue"/>
-    <Message Importance="normal" Text="[SharedProps] $(ScriptName) already exists; skipping download." Condition="Exists('$(ScriptPath)')"/>
+    <Message Importance="high" Text="[SharedProps] Could not download $(ScriptName) after 3 attempts; skipping the dependency-version check for this run." Condition="!Exists('$(ScriptPath)')"/>
   </Target>
 
   <Target Name="RunDependencyUpdater" AfterTargets="DownloadScript" BeforeTargets="Restore" Condition="Exists('$(ScriptPath)')">
     <Message Importance="normal" Text="[SharedProps] Checking ThunderPropagator dependency versions via $(ScriptPath) ..."/>
     <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(ScriptPath)&quot; -Check"
-          ContinueOnError="WarnAndContinue"/>
+          ContinueOnError="WarnAndContinue"
+          IgnoreExitCode="true">
+      <Output TaskParameter="ExitCode" PropertyName="_DependencyCheckExitCode"/>
+    </Exec>
+    <Message Importance="normal" Text="[SharedProps] Dependency version check completed; all family packages are up to date or the report above lists what's outdated." Condition="'$(_DependencyCheckExitCode)' == '0'"/>
+    <Message Importance="high" Text="[SharedProps] Dependency version check exited with code $(_DependencyCheckExitCode); see the output above for details." Condition="'$(_DependencyCheckExitCode)' != '' and '$(_DependencyCheckExitCode)' != '0'"/>
   </Target>
 </Project>
