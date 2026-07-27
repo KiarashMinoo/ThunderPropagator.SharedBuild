@@ -25,7 +25,7 @@
     <Delete Files="$(ScriptPath)" Condition="Exists('$(ScriptPath)')"/>
   </Target>
 
-  <Target Name="DownloadScript" BeforeTargets="Restore">
+  <Target Name="DownloadScript" BeforeTargets="_GenerateRestoreProjectPathWalk;Restore;Build">
     <MakeDir Directories="$(ScriptsPath)" Condition="!Exists('$(ScriptsPath)')"/>
     <Message Importance="normal" Text="[SharedProps] $(ScriptName) already present at $(ScriptPath); skipping download." Condition="Exists('$(ScriptPath)')"/>
     <Message Importance="normal" Text="[SharedProps] Downloading $(ScriptName) from $(ScriptUrl) (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(ScriptPath)')"/>
@@ -39,7 +39,7 @@
     <Message Importance="high" Text="[SharedProps] Could not download $(ScriptName) after 3 attempts; skipping the dependency-version check for this run." Condition="!Exists('$(ScriptPath)')"/>
   </Target>
 
-  <Target Name="RunDependencyUpdater" AfterTargets="DownloadScript" BeforeTargets="Restore" Condition="Exists('$(ScriptPath)')">
+  <Target Name="RunDependencyUpdater" AfterTargets="DownloadScript" BeforeTargets="_GenerateRestoreProjectPathWalk;Restore;Build" Condition="Exists('$(ScriptPath)')">
     <Message Importance="normal" Text="[SharedProps] Checking ThunderPropagator dependency versions via $(ScriptPath) ..."/>
     <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(ScriptPath)&quot; -Check"
           ContinueOnError="WarnAndContinue"

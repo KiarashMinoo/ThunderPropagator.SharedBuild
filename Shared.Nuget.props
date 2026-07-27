@@ -37,7 +37,7 @@
   <!-- Downloaded one after another (not in parallel): both are small text files, so the
        simplicity of a plain sequential fetch outweighs the complexity of orchestrating real
        concurrency here. -->
-  <Target Name="DownloadSharedNugetImports" BeforeTargets="Build;Restore">
+  <Target Name="DownloadSharedNugetImports" BeforeTargets="_GenerateRestoreProjectPathWalk;Restore;Build">
     <MakeDir Directories="$(MSBuildThisFileDirectory)" Condition="!Exists('$(MSBuildThisFileDirectory)')"/>
 
     <Message Importance="normal" Text="[SharedProps] Shared.NugetIcon.props already present at $(SharedNugetIconPropsPath); skipping download." Condition="Exists('$(SharedNugetIconPropsPath)')"/>

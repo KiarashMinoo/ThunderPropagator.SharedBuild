@@ -22,7 +22,7 @@
   <!-- Runs on both Build and Restore (unlike the dependency-updater script, which is
        Restore-only) because the icon must exist by pack time, and a plain `dotnet build`
        with no prior restore still needs to produce a valid package. -->
-  <Target Name="DownloadThunderPropagatorIcon" BeforeTargets="Build;Restore">
+  <Target Name="DownloadThunderPropagatorIcon" BeforeTargets="_GenerateRestoreProjectPathWalk;Restore;Build">
     <MakeDir Directories="$(MSBuildThisFileDirectory)" Condition="!Exists('$(MSBuildThisFileDirectory)')"/>
     <Message Importance="normal" Text="[SharedProps] $(IconName) already present at $(IconPath); skipping download." Condition="Exists('$(IconPath)')"/>
     <Message Importance="normal" Text="[SharedProps] Downloading $(IconName) icon from $(IconUrl) (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(IconPath)')"/>
