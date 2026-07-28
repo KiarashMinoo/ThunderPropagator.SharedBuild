@@ -6,7 +6,7 @@
   -->
   <PropertyGroup>
     <IconName>ThunderPropagator.png</IconName>
-    <IconUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/ThunderPropagator.png</IconUrl>
+    <IconUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/ThunderPropagator.png?cb=$([System.DateTime]::UtcNow.Ticks)</IconUrl>
     <IconPath>$(MSBuildThisFileDirectory)$(IconName)</IconPath>
   </PropertyGroup>
 
@@ -58,8 +58,20 @@
   </Target>
 
   <!-- Condition="Exists(...)" keeps a failed best-effort download from breaking `dotnet pack`
-       (Copy/Pack would otherwise fail trying to include a file that was never downloaded). -->
+       (Copy/Pack would otherwise fail trying to include a file that was never downloaded).
+       Also guarded against NU5050 on a multi-targeted consumer (net8.0;net9.0;net10.0, per
+       Shared.Build.props) the same way as Shared.NugetReadme.props: `dotnet pack` evaluates
+       this ItemGroup once per inner per-TargetFramework build, and PackagePath="" + Link alone
+       does not dedupe those N identical contributions — only adding the item during the single
+       outer/aggregating evaluation (where $(TargetFramework) is empty) does. The
+       '$(TargetFrameworks)' == '' escape hatch keeps this working for a consumer that isn't
+       multi-targeted at all. See Shared.NugetReadme.props for the full writeup — this had the
+       same latent bug but hadn't yet hit it in CI the way the readme did. -->
   <ItemGroup Label="PackageAssets">
-    <None Include="$(IconPath)" Pack="true" Link="$(IconName)" PackagePath="" Condition="Exists('$(IconPath)')"/>
+    <None Include="$(IconPath)"
+          Pack="true"
+          Link="$(IconName)"
+          PackagePath=""
+          Condition="Exists('$(IconPath)') and ('$(TargetFrameworks)' == '' or '$(TargetFramework)' == '')"/>
   </ItemGroup>
 </Project>

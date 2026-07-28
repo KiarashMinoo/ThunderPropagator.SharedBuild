@@ -45,7 +45,7 @@
     <Message Importance="normal" Text="[SharedProps] Shared.NugetIcon.props already present at $(SharedNugetIconPropsPath); skipping download." Condition="Exists('$(SharedNugetIconPropsPath)')"/>
     <Message Importance="normal" Text="[SharedProps] Downloading Shared.NugetIcon.props from $(SharedPropsBaseUrl)Shared.NugetIcon.props (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(SharedNugetIconPropsPath)')"/>
     <DownloadFile DestinationFileName="Shared.NugetIcon.props.$(MSBuildProjectName)$(TargetFramework).tmp"
-                  SourceUrl="$(SharedPropsBaseUrl)Shared.NugetIcon.props"
+                  SourceUrl="$(SharedPropsBaseUrl)Shared.NugetIcon.props?cb=$([System.DateTime]::UtcNow.Ticks)"
                   DestinationFolder="$(MSBuildThisFileDirectory)"
                   Condition="!Exists('$(SharedNugetIconPropsPath)')"
                   Retries="3"
@@ -63,7 +63,7 @@
     <Message Importance="normal" Text="[SharedProps] Shared.NugetReadme.props already present at $(SharedNugetReadmePropsPath); skipping download." Condition="Exists('$(SharedNugetReadmePropsPath)')"/>
     <Message Importance="normal" Text="[SharedProps] Downloading Shared.NugetReadme.props from $(SharedPropsBaseUrl)Shared.NugetReadme.props (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(SharedNugetReadmePropsPath)')"/>
     <DownloadFile DestinationFileName="Shared.NugetReadme.props.$(MSBuildProjectName)$(TargetFramework).tmp"
-                  SourceUrl="$(SharedPropsBaseUrl)Shared.NugetReadme.props"
+                  SourceUrl="$(SharedPropsBaseUrl)Shared.NugetReadme.props?cb=$([System.DateTime]::UtcNow.Ticks)"
                   DestinationFolder="$(MSBuildThisFileDirectory)"
                   Condition="!Exists('$(SharedNugetReadmePropsPath)')"
                   Retries="3"

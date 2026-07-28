@@ -15,7 +15,7 @@
   -->
   <PropertyGroup>
     <ScriptName>Update-ThunderPropagatorDependencies.ps1</ScriptName>
-    <ScriptUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/$(ScriptName)</ScriptUrl>
+    <ScriptUrl>https://raw.githubusercontent.com/KiarashMinoo/ThunderPropagator.SharedBuild/main/$(ScriptName)?cb=$([System.DateTime]::UtcNow.Ticks)</ScriptUrl>
     <!-- This file is downloaded into <repo>\.shared-props\, so $(MSBuildThisFileDirectory)
          is that folder — go up one level to reach the repo root before .github\scripts\. -->
     <ScriptsPath>$(MSBuildThisFileDirectory)../.github/scripts/</ScriptsPath>

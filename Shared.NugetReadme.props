@@ -15,15 +15,27 @@
        skipped instead of failing the pack — see Shared.Nuget.props for the matching
        PackageReadmeFile guard that keeps NuGet from expecting a file that was never packed. -->
   <ItemGroup Label="PackageAssets">
-    <!-- PackagePath="" + Link="README.md" (not a plain PackagePath="README.md") — consumers
-         multi-target several TFMs, and `dotnet pack` evaluates this item once per inner
-         per-TargetFramework build before aggregating. A fixed PackagePath doesn't get deduped
-         across those inner builds, so NuGet sees the same destination contributed once per TFM
-         and fails with NU5050 ("Attempted to pack multiple files into the same location(s)").
-         PackagePath="" + Link is the pattern the SDK actually collapses to a single package-root
-         entry regardless of how many inner builds contribute it — see Shared.NugetIcon.props,
-         which already uses this and has never hit NU5050. Link still pins the exact,
-         case-sensitive in-package filename, so naming on case-sensitive Linux is unaffected. -->
-    <None Include="$(ThunderPropagatorReadmePath)" Condition="'$(ThunderPropagatorReadmePath)' != '' and Exists('$(ThunderPropagatorReadmePath)')" Pack="true" PackagePath="" Link="README.md"/>
+    <!-- The real NU5050 cause on a multi-targeted consumer (net8.0;net9.0;net10.0, per
+         Shared.Build.props): `dotnet pack` runs one inner build per TargetFramework, and
+         each inner build independently evaluates this ItemGroup and contributes its own
+         copy of the None item to the outer, aggregating pack. PackagePath="" + Link="README.md"
+         alone does NOT dedupe those N identical contributions — NuGet still sees N entries
+         all resolving to the package path "README.md" and fails with NU5050 ("Attempted to
+         pack multiple files into the same location(s)"). Confirmed against real CI failures
+         on ThunderPropagator.FormatSerializers (3 TFMs => the item was added 3 times).
+         The actual fix is to only add the item ONCE, during the single outer/aggregating
+         evaluation — which is the one pass where $(TargetFramework) is empty and only the
+         plural $(TargetFrameworks) is set. For a consumer that ISN'T multi-targeted at all
+         (only ever has $(TargetFramework), never $(TargetFrameworks)), that same condition
+         would wrongly suppress the item forever, so it's paired with an
+         "isn't multi-targeted" escape hatch: '$(TargetFrameworks)' == ''. Link is kept
+         alongside PackagePath="" purely to pin the exact, case-sensitive in-package
+         filename (naming on case-sensitive Linux is unaffected); it does not by itself
+         solve the duplication. -->
+    <None Include="$(ThunderPropagatorReadmePath)"
+          Condition="'$(ThunderPropagatorReadmePath)' != '' and Exists('$(ThunderPropagatorReadmePath)') and ('$(TargetFrameworks)' == '' or '$(TargetFramework)' == '')"
+          Pack="true"
+          PackagePath=""
+          Link="README.md"/>
   </ItemGroup>
 </Project>

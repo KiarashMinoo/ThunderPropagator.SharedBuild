@@ -54,7 +54,7 @@
     <Message Importance="normal" Text="[SharedProps] Shared.Build.props already present at $(SharedBuildPropsPath); skipping download." Condition="Exists('$(SharedBuildPropsPath)')"/>
     <Message Importance="normal" Text="[SharedProps] Downloading Shared.Build.props from $(SharedPropsBaseUrl)Shared.Build.props (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(SharedBuildPropsPath)')"/>
     <DownloadFile DestinationFileName="Shared.Build.props.$(MSBuildProjectName)$(TargetFramework).tmp"
-                  SourceUrl="$(SharedPropsBaseUrl)Shared.Build.props"
+                  SourceUrl="$(SharedPropsBaseUrl)Shared.Build.props?cb=$([System.DateTime]::UtcNow.Ticks)"
                   DestinationFolder="$(MSBuildThisFileDirectory)"
                   Condition="!Exists('$(SharedBuildPropsPath)')"
                   Retries="3"
@@ -72,7 +72,7 @@
     <Message Importance="normal" Text="[SharedProps] Shared.Nuget.props already present at $(SharedNugetPropsPath); skipping download." Condition="Exists('$(SharedNugetPropsPath)')"/>
     <Message Importance="normal" Text="[SharedProps] Downloading Shared.Nuget.props from $(SharedPropsBaseUrl)Shared.Nuget.props (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(SharedNugetPropsPath)')"/>
     <DownloadFile DestinationFileName="Shared.Nuget.props.$(MSBuildProjectName)$(TargetFramework).tmp"
-                  SourceUrl="$(SharedPropsBaseUrl)Shared.Nuget.props"
+                  SourceUrl="$(SharedPropsBaseUrl)Shared.Nuget.props?cb=$([System.DateTime]::UtcNow.Ticks)"
                   DestinationFolder="$(MSBuildThisFileDirectory)"
                   Condition="!Exists('$(SharedNugetPropsPath)')"
                   Retries="3"
@@ -90,7 +90,7 @@
     <Message Importance="normal" Text="[SharedProps] Shared.PackageIds.props already present at $(SharedPackageIdsPropsPath); skipping download." Condition="Exists('$(SharedPackageIdsPropsPath)')"/>
     <Message Importance="normal" Text="[SharedProps] Downloading Shared.PackageIds.props from $(SharedPropsBaseUrl)Shared.PackageIds.props (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(SharedPackageIdsPropsPath)')"/>
     <DownloadFile DestinationFileName="Shared.PackageIds.props.$(MSBuildProjectName)$(TargetFramework).tmp"
-                  SourceUrl="$(SharedPropsBaseUrl)Shared.PackageIds.props"
+                  SourceUrl="$(SharedPropsBaseUrl)Shared.PackageIds.props?cb=$([System.DateTime]::UtcNow.Ticks)"
                   DestinationFolder="$(MSBuildThisFileDirectory)"
                   Condition="!Exists('$(SharedPackageIdsPropsPath)')"
                   Retries="3"
@@ -108,7 +108,7 @@
     <Message Importance="normal" Text="[SharedProps] Shared.DependencyUpdater.props already present at $(SharedDependencyUpdaterPropsPath); skipping download." Condition="Exists('$(SharedDependencyUpdaterPropsPath)')"/>
     <Message Importance="normal" Text="[SharedProps] Downloading Shared.DependencyUpdater.props from $(SharedPropsBaseUrl)Shared.DependencyUpdater.props (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(SharedDependencyUpdaterPropsPath)')"/>
     <DownloadFile DestinationFileName="Shared.DependencyUpdater.props.$(MSBuildProjectName)$(TargetFramework).tmp"
-                  SourceUrl="$(SharedPropsBaseUrl)Shared.DependencyUpdater.props"
+                  SourceUrl="$(SharedPropsBaseUrl)Shared.DependencyUpdater.props?cb=$([System.DateTime]::UtcNow.Ticks)"
                   DestinationFolder="$(MSBuildThisFileDirectory)"
                   Condition="!Exists('$(SharedDependencyUpdaterPropsPath)')"
                   Retries="3"
