@@ -15,7 +15,15 @@
        skipped instead of failing the pack — see Shared.Nuget.props for the matching
        PackageReadmeFile guard that keeps NuGet from expecting a file that was never packed. -->
   <ItemGroup Label="PackageAssets">
-    <!-- PackagePath="README.md" ensures consistent naming inside the package on case-sensitive Linux -->
-    <None Include="$(ThunderPropagatorReadmePath)" Condition="'$(ThunderPropagatorReadmePath)' != '' and Exists('$(ThunderPropagatorReadmePath)')" Pack="true" PackagePath="README.md"/>
+    <!-- PackagePath="" + Link="README.md" (not a plain PackagePath="README.md") — consumers
+         multi-target several TFMs, and `dotnet pack` evaluates this item once per inner
+         per-TargetFramework build before aggregating. A fixed PackagePath doesn't get deduped
+         across those inner builds, so NuGet sees the same destination contributed once per TFM
+         and fails with NU5050 ("Attempted to pack multiple files into the same location(s)").
+         PackagePath="" + Link is the pattern the SDK actually collapses to a single package-root
+         entry regardless of how many inner builds contribute it — see Shared.NugetIcon.props,
+         which already uses this and has never hit NU5050. Link still pins the exact,
+         case-sensitive in-package filename, so naming on case-sensitive Linux is unaffected. -->
+    <None Include="$(ThunderPropagatorReadmePath)" Condition="'$(ThunderPropagatorReadmePath)' != '' and Exists('$(ThunderPropagatorReadmePath)')" Pack="true" PackagePath="" Link="README.md"/>
   </ItemGroup>
 </Project>
