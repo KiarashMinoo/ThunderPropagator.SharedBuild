@@ -1,13 +1,17 @@
 <Project>
   <!--
     Wires the optional dependency-updater script into a consumer's restore pipeline as a
-    report-only, pre-restore check: DownloadScript fetches the script (or reuses a consumer's
+    report-only, post-restore check: DownloadScript fetches the script (or reuses a consumer's
     own committed copy under .github/scripts/ — see the path comment below) and runs on both
     Build and Restore so the script is available either way. RunDependencyUpdater is the
     actual check — it runs the script with -Check, which only prints current-vs-latest
-    versions and never mutates a tracked file — and is deliberately Restore-only, never on a
-    plain Build. Every failure is a warning, so a network hiccup or script error never breaks
-    the build.
+    versions and never mutates a tracked file — and fires AFTER Restore completes (deliberately
+    not on a plain Build): running before Restore had no benefit anyway, since MSBuild evaluates
+    a project's properties/items once, up front, before any target runs — a
+    BeforeTargets="Restore" hook rewriting Directory.Packages.props mid-evaluation could never
+    change what that same Restore pass actually restores, so there was nothing to lose by moving
+    it here and it reads more naturally: check what was just restored, report what's newer.
+    Every failure is a warning, so a network hiccup or script error never breaks the build.
   -->
   <PropertyGroup>
     <ScriptName>Update-ThunderPropagatorDependencies.ps1</ScriptName>
@@ -60,7 +64,7 @@
     <Message Importance="high" Text="[SharedProps] Could not download $(ScriptName) after 3 attempts; skipping the dependency-version check for this run." Condition="!Exists('$(ScriptPath)')"/>
   </Target>
 
-  <Target Name="RunDependencyUpdater" AfterTargets="DownloadScript" BeforeTargets="_GenerateRestoreProjectPathWalk;Restore;Build" Condition="Exists('$(ScriptPath)')">
+  <Target Name="RunDependencyUpdater" AfterTargets="DownloadScript;Restore" Condition="Exists('$(ScriptPath)')">
     <Message Importance="normal" Text="[SharedProps] Checking ThunderPropagator dependency versions via $(ScriptPath) ..."/>
     <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(ScriptPath)&quot; -Check"
           ContinueOnError="WarnAndContinue"
