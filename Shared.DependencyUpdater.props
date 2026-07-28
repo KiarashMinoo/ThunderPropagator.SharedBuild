@@ -64,7 +64,17 @@
     <Message Importance="high" Text="[SharedProps] Could not download $(ScriptName) after 3 attempts; skipping the dependency-version check for this run." Condition="!Exists('$(ScriptPath)')"/>
   </Target>
 
-  <Target Name="RunDependencyUpdater" AfterTargets="Restore" Condition="Exists('$(ScriptPath)')">
+  <!-- $(SkipPerProjectDependencyCheck): unset/false for every consumer by default, so this
+       keeps running exactly as before unless a consumer opts out. A solution with several
+       projects triggers this once PER PROJECT (each project's own Restore fires it
+       independently) — harmless, but noisy. A consumer that wants the check to run exactly
+       once, at the true end of the whole solution's restore, sets this property to true in its
+       own Directory.Build.props (or equivalent) and adds a Directory.Solution.targets of its
+       own with the equivalent target — see https://learn.microsoft.com/visualstudio/msbuild/customize-solution-build.
+       Directory.Solution.targets only takes effect for command-line builds against a .sln/.slnx,
+       not IDE-driven per-project builds, which is why this per-project target isn't simply
+       deleted in favor of it. -->
+  <Target Name="RunDependencyUpdater" AfterTargets="DownloadScript" Condition="Exists('$(ScriptPath)') and '$(SkipPerProjectDependencyCheck)' != 'true'">
     <Message Importance="normal" Text="[SharedProps] Checking ThunderPropagator dependency versions via $(ScriptPath) ..."/>
     <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(ScriptPath)&quot; -Check"
           ContinueOnError="WarnAndContinue"
