@@ -44,8 +44,18 @@
     Print current vs. latest version for every discovered dependency and exit without writing.
 
 .PARAMETER PackageId
-    Look up a single package id instead of scanning Directory.Packages.props. Only meaningful
-    together with -VersionOnly.
+    Restrict to a single package id instead of every ThunderPropagator-family entry.
+
+    Combined with -VersionOnly: just print that package's latest published version and exit --
+    no Directory.Packages.props / Shared.PackageIds.props discovery at all.
+
+    Without -VersionOnly: run the normal discovery/compare/apply flow (respects -Check and
+    -WhatIf same as an unscoped run), but narrowed to just this package id's entry (or entries,
+    if it shares a version property with a sibling -- see -VersionOnly's note on that). Still
+    figures out on its own whether that entry is pinned via a shared version PROPERTY ("key",
+    e.g. Version="$(BuildingBlocksVersion)") or a literal version string, and updates whichever
+    one actually holds the version -- same detection Directory.Packages.props-wide runs already
+    use, just scoped to one package.
 
 .PARAMETER VersionOnly
     Print the latest published version of -PackageId and exit -- nothing else runs: no
@@ -58,6 +68,7 @@
     pwsh .shared-props/Update-ThunderPropagatorDependencies.ps1 -WhatIf
     pwsh .shared-props/Update-ThunderPropagatorDependencies.ps1 -PropsPath ..\Directory.Packages.props
     pwsh .shared-props/Update-ThunderPropagatorDependencies.ps1 -PackageId ThunderPropagator.BuildingBlocks -VersionOnly
+    pwsh .shared-props/Update-ThunderPropagatorDependencies.ps1 -PackageId ThunderPropagator.BuildingBlocks
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
@@ -278,6 +289,29 @@ foreach ($m in [regex]::Matches($propsContent, $pattern)) {
 if ($byVersionProperty.Count -eq 0 -and $byLiteralEntry.Count -eq 0) {
     Write-Warn "No ThunderPropagator-family PackageVersion entries found in '$PropsPath' -- nothing to update."
     exit 0
+}
+
+# ── Optional: narrow everything down to a single -PackageId ───────────────────
+#    (only reached when -VersionOnly wasn't set -- that mode already exited above).
+#    Figures out where THIS package's version actually lives -- a shared property
+#    ("key", $byVersionProperty) or a literal string on its own PackageVersion line
+#    ($byLiteralEntry) -- and drops everything else, so the resolve/compare/apply
+#    steps below run unmodified but scoped to just this one package (and any
+#    sibling that happens to share the same version property with it).
+if (-not [string]::IsNullOrWhiteSpace($PackageId)) {
+    $scopedByVersionProperty = [ordered]@{}
+    foreach ($verProp in $byVersionProperty.Keys) {
+        if ($byVersionProperty[$verProp] -contains $PackageId) {
+            $scopedByVersionProperty[$verProp] = $byVersionProperty[$verProp]
+        }
+    }
+    $byVersionProperty = $scopedByVersionProperty
+    $byLiteralEntry     = @($byLiteralEntry | Where-Object { $_.LiteralId -ieq $PackageId })
+
+    if ($byVersionProperty.Count -eq 0 -and $byLiteralEntry.Count -eq 0) {
+        Write-Warn "'$PackageId' is not a ThunderPropagator-family PackageVersion entry in '$PropsPath' -- nothing to do."
+        exit 0
+    }
 }
 
 # ── Banner ────────────────────────────────────────────────────────────────────
