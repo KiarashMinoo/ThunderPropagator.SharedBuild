@@ -76,7 +76,7 @@
        deleted in favor of it. -->
   <Target Name="RunDependencyUpdater" AfterTargets="DownloadScript" Condition="Exists('$(ScriptPath)') and '$(SkipPerProjectDependencyCheck)' != 'true'">
     <Message Importance="normal" Text="[SharedProps] Checking ThunderPropagator dependency versions via $(ScriptPath) ..."/>
-    <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(ScriptPath)&quot; -Check"
+    <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(ScriptPath)&quot;"
           ContinueOnError="WarnAndContinue"
           IgnoreExitCode="true">
       <Output TaskParameter="ExitCode" PropertyName="_DependencyCheckExitCode"/>
