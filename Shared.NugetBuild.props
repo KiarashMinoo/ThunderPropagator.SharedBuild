@@ -37,10 +37,10 @@
     <Message Importance="normal" Text="[SharedProps] No Shared.PackageIds.props present at $(SharedPackageIdsPropsPath); nothing to clean." Condition="!Exists('$(SharedPackageIdsPropsPath)')"/>
     <Message Importance="normal" Text="[SharedProps] Deleting Shared.DependencyUpdater.props at $(SharedDependencyUpdaterPropsPath) ..." Condition="Exists('$(SharedDependencyUpdaterPropsPath)')"/>
     <Message Importance="normal" Text="[SharedProps] No Shared.DependencyUpdater.props present at $(SharedDependencyUpdaterPropsPath); nothing to clean." Condition="!Exists('$(SharedDependencyUpdaterPropsPath)')"/>
-    <Delete Files="$(SharedBuildPropsPath)" Condition="Exists('$(SharedBuildPropsPath)')"/>
-    <Delete Files="$(SharedNugetPropsPath)" Condition="Exists('$(SharedNugetPropsPath)')"/>
-    <Delete Files="$(SharedPackageIdsPropsPath)" Condition="Exists('$(SharedPackageIdsPropsPath)')"/>
-    <Delete Files="$(SharedDependencyUpdaterPropsPath)" Condition="Exists('$(SharedDependencyUpdaterPropsPath)')"/>
+    <Delete Files="$(SharedBuildPropsPath)" Condition="Exists('$(SharedBuildPropsPath)')" ContinueOnError="WarnAndContinue"/>
+    <Delete Files="$(SharedNugetPropsPath)" Condition="Exists('$(SharedNugetPropsPath)')" ContinueOnError="WarnAndContinue"/>
+    <Delete Files="$(SharedPackageIdsPropsPath)" Condition="Exists('$(SharedPackageIdsPropsPath)')" ContinueOnError="WarnAndContinue"/>
+    <Delete Files="$(SharedDependencyUpdaterPropsPath)" Condition="Exists('$(SharedDependencyUpdaterPropsPath)')" ContinueOnError="WarnAndContinue"/>
   </Target>
 
   <!-- Downloaded one after another (not in parallel): all four are small text files, so the
@@ -65,7 +65,8 @@
           Condition="Exists('$(MSBuildThisFileDirectory)Shared.Build.props.$(MSBuildProjectName)$(TargetFramework).tmp') and !Exists('$(SharedBuildPropsPath)')"
           ContinueOnError="WarnAndContinue"/>
     <Delete Files="$(MSBuildThisFileDirectory)Shared.Build.props.$(MSBuildProjectName)$(TargetFramework).tmp"
-            Condition="Exists('$(MSBuildThisFileDirectory)Shared.Build.props.$(MSBuildProjectName)$(TargetFramework).tmp')"/>
+            Condition="Exists('$(MSBuildThisFileDirectory)Shared.Build.props.$(MSBuildProjectName)$(TargetFramework).tmp')"
+            ContinueOnError="WarnAndContinue"/>
     <Message Importance="high" Text="[SharedProps] Could not download Shared.Build.props after 3 attempts; SDK-wide compiler/target defaults are skipped until a later restore succeeds." Condition="!Exists('$(SharedBuildPropsPath)')"/>
 
     <Message Importance="normal" Text="[SharedProps] Shared.Nuget.props already present at $(SharedNugetPropsPath); skipping download." Condition="Exists('$(SharedNugetPropsPath)')"/>
@@ -82,7 +83,8 @@
           Condition="Exists('$(MSBuildThisFileDirectory)Shared.Nuget.props.$(MSBuildProjectName)$(TargetFramework).tmp') and !Exists('$(SharedNugetPropsPath)')"
           ContinueOnError="WarnAndContinue"/>
     <Delete Files="$(MSBuildThisFileDirectory)Shared.Nuget.props.$(MSBuildProjectName)$(TargetFramework).tmp"
-            Condition="Exists('$(MSBuildThisFileDirectory)Shared.Nuget.props.$(MSBuildProjectName)$(TargetFramework).tmp')"/>
+            Condition="Exists('$(MSBuildThisFileDirectory)Shared.Nuget.props.$(MSBuildProjectName)$(TargetFramework).tmp')"
+            ContinueOnError="WarnAndContinue"/>
     <Message Importance="high" Text="[SharedProps] Could not download Shared.Nuget.props after 3 attempts; NuGet package metadata is skipped until a later restore succeeds." Condition="!Exists('$(SharedNugetPropsPath)')"/>
 
     <Message Importance="normal" Text="[SharedProps] Shared.PackageIds.props already present at $(SharedPackageIdsPropsPath); skipping download." Condition="Exists('$(SharedPackageIdsPropsPath)')"/>
@@ -99,7 +101,8 @@
           Condition="Exists('$(MSBuildThisFileDirectory)Shared.PackageIds.props.$(MSBuildProjectName)$(TargetFramework).tmp') and !Exists('$(SharedPackageIdsPropsPath)')"
           ContinueOnError="WarnAndContinue"/>
     <Delete Files="$(MSBuildThisFileDirectory)Shared.PackageIds.props.$(MSBuildProjectName)$(TargetFramework).tmp"
-            Condition="Exists('$(MSBuildThisFileDirectory)Shared.PackageIds.props.$(MSBuildProjectName)$(TargetFramework).tmp')"/>
+            Condition="Exists('$(MSBuildThisFileDirectory)Shared.PackageIds.props.$(MSBuildProjectName)$(TargetFramework).tmp')"
+            ContinueOnError="WarnAndContinue"/>
     <Message Importance="high" Text="[SharedProps] Could not download Shared.PackageIds.props after 3 attempts; family package-id properties are skipped until a later restore succeeds." Condition="!Exists('$(SharedPackageIdsPropsPath)')"/>
 
     <Message Importance="normal" Text="[SharedProps] Shared.DependencyUpdater.props already present at $(SharedDependencyUpdaterPropsPath); skipping download." Condition="Exists('$(SharedDependencyUpdaterPropsPath)')"/>
@@ -116,7 +119,8 @@
           Condition="Exists('$(MSBuildThisFileDirectory)Shared.DependencyUpdater.props.$(MSBuildProjectName)$(TargetFramework).tmp') and !Exists('$(SharedDependencyUpdaterPropsPath)')"
           ContinueOnError="WarnAndContinue"/>
     <Delete Files="$(MSBuildThisFileDirectory)Shared.DependencyUpdater.props.$(MSBuildProjectName)$(TargetFramework).tmp"
-            Condition="Exists('$(MSBuildThisFileDirectory)Shared.DependencyUpdater.props.$(MSBuildProjectName)$(TargetFramework).tmp')"/>
+            Condition="Exists('$(MSBuildThisFileDirectory)Shared.DependencyUpdater.props.$(MSBuildProjectName)$(TargetFramework).tmp')"
+            ContinueOnError="WarnAndContinue"/>
     <Message Importance="high" Text="[SharedProps] Could not download Shared.DependencyUpdater.props after 3 attempts; the dependency-version check is skipped until a later restore succeeds." Condition="!Exists('$(SharedDependencyUpdaterPropsPath)')"/>
   </Target>
 

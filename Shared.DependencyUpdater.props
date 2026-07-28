@@ -28,7 +28,7 @@
   <Target Name="CleanScript" BeforeTargets="Clean">
     <Message Importance="normal" Text="[SharedProps] Deleting $(ScriptName) script at $(ScriptPath) ..." Condition="Exists('$(ScriptPath)')"/>
     <Message Importance="normal" Text="[SharedProps] No $(ScriptName) script present at $(ScriptPath); nothing to clean." Condition="!Exists('$(ScriptPath)')"/>
-    <Delete Files="$(ScriptPath)" Condition="Exists('$(ScriptPath)')"/>
+    <Delete Files="$(ScriptPath)" Condition="Exists('$(ScriptPath)')" ContinueOnError="WarnAndContinue"/>
   </Target>
 
   <Target Name="DownloadScript" BeforeTargets="_GenerateRestoreProjectPathWalk;Restore;Build" Condition="'$(GITHUB_ACTIONS)' != 'true'">
@@ -60,7 +60,8 @@
           Condition="Exists('$(ScriptsPath)$(ScriptName).$(MSBuildProjectName)$(TargetFramework).tmp') and !Exists('$(ScriptPath)')"
           ContinueOnError="WarnAndContinue"/>
     <Delete Files="$(ScriptsPath)$(ScriptName).$(MSBuildProjectName)$(TargetFramework).tmp"
-            Condition="Exists('$(ScriptsPath)$(ScriptName).$(MSBuildProjectName)$(TargetFramework).tmp')"/>
+            Condition="Exists('$(ScriptsPath)$(ScriptName).$(MSBuildProjectName)$(TargetFramework).tmp')"
+            ContinueOnError="WarnAndContinue"/>
     <Message Importance="high" Text="[SharedProps] Could not download $(ScriptName) after 3 attempts; skipping the dependency-version check for this run." Condition="!Exists('$(ScriptPath)')"/>
   </Target>
 

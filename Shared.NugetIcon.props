@@ -16,7 +16,7 @@
   <Target Name="CleanThunderPropagatorIcon" BeforeTargets="Clean">
     <Message Importance="normal" Text="[SharedProps] Deleting $(IconName) icon at $(IconPath) ..." Condition="Exists('$(IconPath)')"/>
     <Message Importance="normal" Text="[SharedProps] No $(IconName) icon present at $(IconPath); nothing to clean." Condition="!Exists('$(IconPath)')"/>
-    <Delete Files="$(IconPath)" Condition="Exists('$(IconPath)')"/>
+    <Delete Files="$(IconPath)" Condition="Exists('$(IconPath)')" ContinueOnError="WarnAndContinue"/>
   </Target>
 
   <!-- Runs on both Build and Restore (unlike the dependency-updater script, which is
@@ -52,7 +52,8 @@
           Condition="Exists('$(MSBuildThisFileDirectory)$(IconName).$(MSBuildProjectName)$(TargetFramework).tmp') and !Exists('$(IconPath)')"
           ContinueOnError="WarnAndContinue"/>
     <Delete Files="$(MSBuildThisFileDirectory)$(IconName).$(MSBuildProjectName)$(TargetFramework).tmp"
-            Condition="Exists('$(MSBuildThisFileDirectory)$(IconName).$(MSBuildProjectName)$(TargetFramework).tmp')"/>
+            Condition="Exists('$(MSBuildThisFileDirectory)$(IconName).$(MSBuildProjectName)$(TargetFramework).tmp')"
+            ContinueOnError="WarnAndContinue"/>
     <Message Importance="high" Text="[SharedProps] Could not download $(IconName) after 3 attempts; continuing without a PackageIcon for this build." Condition="!Exists('$(IconPath)')"/>
   </Target>
 

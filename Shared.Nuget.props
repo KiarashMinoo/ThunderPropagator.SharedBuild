@@ -30,8 +30,8 @@
     <Message Importance="normal" Text="[SharedProps] No Shared.NugetIcon.props present at $(SharedNugetIconPropsPath); nothing to clean." Condition="!Exists('$(SharedNugetIconPropsPath)')"/>
     <Message Importance="normal" Text="[SharedProps] Deleting Shared.NugetReadme.props at $(SharedNugetReadmePropsPath) ..." Condition="Exists('$(SharedNugetReadmePropsPath)')"/>
     <Message Importance="normal" Text="[SharedProps] No Shared.NugetReadme.props present at $(SharedNugetReadmePropsPath); nothing to clean." Condition="!Exists('$(SharedNugetReadmePropsPath)')"/>
-    <Delete Files="$(SharedNugetIconPropsPath)" Condition="Exists('$(SharedNugetIconPropsPath)')"/>
-    <Delete Files="$(SharedNugetReadmePropsPath)" Condition="Exists('$(SharedNugetReadmePropsPath)')"/>
+    <Delete Files="$(SharedNugetIconPropsPath)" Condition="Exists('$(SharedNugetIconPropsPath)')" ContinueOnError="WarnAndContinue"/>
+    <Delete Files="$(SharedNugetReadmePropsPath)" Condition="Exists('$(SharedNugetReadmePropsPath)')" ContinueOnError="WarnAndContinue"/>
   </Target>
 
   <!-- Downloaded one after another (not in parallel): both are small text files, so the
@@ -56,7 +56,8 @@
           Condition="Exists('$(MSBuildThisFileDirectory)Shared.NugetIcon.props.$(MSBuildProjectName)$(TargetFramework).tmp') and !Exists('$(SharedNugetIconPropsPath)')"
           ContinueOnError="WarnAndContinue"/>
     <Delete Files="$(MSBuildThisFileDirectory)Shared.NugetIcon.props.$(MSBuildProjectName)$(TargetFramework).tmp"
-            Condition="Exists('$(MSBuildThisFileDirectory)Shared.NugetIcon.props.$(MSBuildProjectName)$(TargetFramework).tmp')"/>
+            Condition="Exists('$(MSBuildThisFileDirectory)Shared.NugetIcon.props.$(MSBuildProjectName)$(TargetFramework).tmp')"
+            ContinueOnError="WarnAndContinue"/>
     <Message Importance="high" Text="[SharedProps] Could not download Shared.NugetIcon.props after 3 attempts; icon packaging is skipped until a later restore succeeds." Condition="!Exists('$(SharedNugetIconPropsPath)')"/>
 
     <Message Importance="normal" Text="[SharedProps] Shared.NugetReadme.props already present at $(SharedNugetReadmePropsPath); skipping download." Condition="Exists('$(SharedNugetReadmePropsPath)')"/>
@@ -73,7 +74,8 @@
           Condition="Exists('$(MSBuildThisFileDirectory)Shared.NugetReadme.props.$(MSBuildProjectName)$(TargetFramework).tmp') and !Exists('$(SharedNugetReadmePropsPath)')"
           ContinueOnError="WarnAndContinue"/>
     <Delete Files="$(MSBuildThisFileDirectory)Shared.NugetReadme.props.$(MSBuildProjectName)$(TargetFramework).tmp"
-            Condition="Exists('$(MSBuildThisFileDirectory)Shared.NugetReadme.props.$(MSBuildProjectName)$(TargetFramework).tmp')"/>
+            Condition="Exists('$(MSBuildThisFileDirectory)Shared.NugetReadme.props.$(MSBuildProjectName)$(TargetFramework).tmp')"
+            ContinueOnError="WarnAndContinue"/>
     <Message Importance="high" Text="[SharedProps] Could not download Shared.NugetReadme.props after 3 attempts; readme packaging is skipped until a later restore succeeds." Condition="!Exists('$(SharedNugetReadmePropsPath)')"/>
   </Target>
 
