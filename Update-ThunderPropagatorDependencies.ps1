@@ -43,11 +43,21 @@
 .PARAMETER Check
     Print current vs. latest version for every discovered dependency and exit without writing.
 
+.PARAMETER PackageId
+    Look up a single package id instead of scanning Directory.Packages.props. Only meaningful
+    together with -VersionOnly.
+
+.PARAMETER VersionOnly
+    Print the latest published version of -PackageId and exit -- nothing else runs: no
+    Directory.Packages.props / Shared.PackageIds.props discovery, no comparison, no write.
+    Requires -PackageId. Takes priority over -Check if both are somehow passed.
+
 .EXAMPLE
     pwsh .shared-props/Update-ThunderPropagatorDependencies.ps1
     pwsh .shared-props/Update-ThunderPropagatorDependencies.ps1 -Check
     pwsh .shared-props/Update-ThunderPropagatorDependencies.ps1 -WhatIf
     pwsh .shared-props/Update-ThunderPropagatorDependencies.ps1 -PropsPath ..\Directory.Packages.props
+    pwsh .shared-props/Update-ThunderPropagatorDependencies.ps1 -PackageId ThunderPropagator.BuildingBlocks -VersionOnly
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
@@ -55,62 +65,58 @@ param(
     [string] $PropsPath            = "",
     [string] $SharedPackageIdsPath = "",
     [string] $Source               = "https://api.nuget.org/v3/index.json",
-    [switch] $Check
+    [switch] $Check,
+    [string] $PackageId            = "",
+    [switch] $VersionOnly
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference    = 'SilentlyContinue'
 
-# ── Resolve paths (works from .shared-props\, .github\scripts\, or any other
-#    folder inside the target repo -- walks up to find Directory.Packages.props as
-#    the repo-root marker instead of assuming a fixed relative layout) ───────────
-
-function Find-RepoRoot {
-    param([string]$StartDirectory)
-    $dir = $StartDirectory
-    while ($dir) {
-        if (Test-Path (Join-Path $dir "Directory.Packages.props")) { return $dir }
-        $parent = Split-Path $dir -Parent
-        if (-not $parent -or $parent -eq $dir) { return $null }
-        $dir = $parent
-    }
-    return $null
-}
-
-if ([string]::IsNullOrWhiteSpace($PropsPath)) {
-    $repoRoot = Find-RepoRoot -StartDirectory $PSScriptRoot
-    if (-not $repoRoot) {
-        throw "Could not locate Directory.Packages.props by walking up from '$PSScriptRoot'. Pass -PropsPath explicitly."
-    }
-    $PropsPath = Join-Path $repoRoot "Directory.Packages.props"
-}
-if (-not (Test-Path $PropsPath)) {
-    throw "Directory.Packages.props not found at '$PropsPath'. Pass -PropsPath explicitly."
-}
-
-if ([string]::IsNullOrWhiteSpace($SharedPackageIdsPath)) {
-    # Prefer a copy sitting right next to this script (the .shared-props\ case);
-    # otherwise fall back to <repo root>\.shared-props\Shared.PackageIds.props
-    # (the repo-local-copy case, e.g. .github\scripts\).
-    $sibling              = Join-Path $PSScriptRoot "Shared.PackageIds.props"
-    $SharedPackageIdsPath = if (Test-Path $sibling) { $sibling } else { Join-Path (Split-Path $PropsPath -Parent) ".shared-props/Shared.PackageIds.props" }
-}
-if (-not (Test-Path $SharedPackageIdsPath)) {
-    throw "Shared.PackageIds.props not found at '$SharedPackageIdsPath'. Run 'dotnet restore' first, or pass -SharedPackageIdsPath."
-}
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ── Helpers (defined up front: -VersionOnly below needs Get-LatestPackageVersion
+#    before anything else in the script runs) ───────────────────────────────────
 
 function Write-Step { param($m) Write-Host "  -> $m" -ForegroundColor Cyan }
 function Write-Ok   { param($m) Write-Host "  OK $m" -ForegroundColor Green }
 function Write-Warn { param($m) Write-Host "  !! $m" -ForegroundColor Yellow }
 
 function Get-VersionSortKey {
-    # SemanticVersion understands prerelease ordering (1.0.1-beta.9 < 1.0.1-beta.10 < 1.0.1).
+    # Deliberately NOT [System.Management.Automation.SemanticVersion]: observed in practice to
+    # rank "1.0.1-beta.79" ABOVE "1.0.1-beta.119" -- its prerelease-label comparison appears to
+    # compare the label as plain text ('7' > '1' as the first differing character), not as a
+    # numeric SemVer identifier (119 > 79). Building a zero-padded string key instead, so an
+    # ordinary lexicographic/ordinal comparison is numeric-correct without depending on that
+    # class's behavior at all: every dot-separated segment that is ALL DIGITS (in both the core
+    # X.Y.Z and any prerelease identifiers) gets left-padded to a fixed width, so "79" (->
+    # "0000000079") sorts below "119" (-> "0000000119") the way plain strings compare. A version
+    # with no prerelease outranks one that has any prerelease of the same core version (release >
+    # prerelease, per SemVer precedence rules) -- encoded with a trailing "~" (0x7E, sorts after
+    # the "-" that starts every prerelease key).
     param([string]$Version)
-    try { [System.Management.Automation.SemanticVersion]::Parse($Version) }
-    catch { $null }
+
+    function Get-PaddedSegment {
+        param([string]$Segment)
+        if ($Segment -match '^\d+$') { return $Segment.PadLeft(10, '0') }
+        return $Segment
+    }
+
+    $core = $Version
+    $plusIndex = $core.IndexOf('+')
+    if ($plusIndex -ge 0) { $core = $core.Substring(0, $plusIndex) }   # build metadata plays no part in precedence
+
+    $pre = $null
+    $dashIndex = $core.IndexOf('-')
+    if ($dashIndex -ge 0) {
+        $pre  = $core.Substring($dashIndex + 1)
+        $core = $core.Substring(0, $dashIndex)
+    }
+
+    $coreKey = ($core -split '\.' | ForEach-Object { Get-PaddedSegment $_ }) -join '.'
+    if ($null -eq $pre) { return "$coreKey~" }
+
+    $preKey = ($pre -split '\.' | ForEach-Object { Get-PaddedSegment $_ }) -join '.'
+    return "$coreKey-$preKey"
 }
 
 $script:FlatContainerBaseUrlCache = @{}
@@ -167,6 +173,61 @@ function Get-LatestPackageVersion {
     }
 
     return $versions | Sort-Object { Get-VersionSortKey $_ } -Descending | Select-Object -First 1
+}
+
+# ── -VersionOnly: resolve one package's latest version and stop right here ─────
+#    Bypasses Directory.Packages.props / Shared.PackageIds.props entirely -- neither
+#    is needed just to answer "what's the latest version of <id>", and requiring them
+#    would make this mode fail outside a fully-restored repo for no reason. Never
+#    writes anything, regardless of -Check.
+if ($VersionOnly) {
+    if ([string]::IsNullOrWhiteSpace($PackageId)) {
+        throw "-VersionOnly requires -PackageId <id>."
+    }
+    $latest = Get-LatestPackageVersion -PackageId $PackageId -SourceUrl $Source
+    if (-not $latest) {
+        throw "Could not resolve a version for '$PackageId' on '$Source'."
+    }
+    Write-Output $latest
+    exit 0
+}
+
+# ── Resolve paths (works from .shared-props\, .github\scripts\, or any other
+#    folder inside the target repo -- walks up to find Directory.Packages.props as
+#    the repo-root marker instead of assuming a fixed relative layout) ───────────
+
+function Find-RepoRoot {
+    param([string]$StartDirectory)
+    $dir = $StartDirectory
+    while ($dir) {
+        if (Test-Path (Join-Path $dir "Directory.Packages.props")) { return $dir }
+        $parent = Split-Path $dir -Parent
+        if (-not $parent -or $parent -eq $dir) { return $null }
+        $dir = $parent
+    }
+    return $null
+}
+
+if ([string]::IsNullOrWhiteSpace($PropsPath)) {
+    $repoRoot = Find-RepoRoot -StartDirectory $PSScriptRoot
+    if (-not $repoRoot) {
+        throw "Could not locate Directory.Packages.props by walking up from '$PSScriptRoot'. Pass -PropsPath explicitly."
+    }
+    $PropsPath = Join-Path $repoRoot "Directory.Packages.props"
+}
+if (-not (Test-Path $PropsPath)) {
+    throw "Directory.Packages.props not found at '$PropsPath'. Pass -PropsPath explicitly."
+}
+
+if ([string]::IsNullOrWhiteSpace($SharedPackageIdsPath)) {
+    # Prefer a copy sitting right next to this script (the .shared-props\ case);
+    # otherwise fall back to <repo root>\.shared-props\Shared.PackageIds.props
+    # (the repo-local-copy case, e.g. .github\scripts\).
+    $sibling              = Join-Path $PSScriptRoot "Shared.PackageIds.props"
+    $SharedPackageIdsPath = if (Test-Path $sibling) { $sibling } else { Join-Path (Split-Path $PropsPath -Parent) ".shared-props/Shared.PackageIds.props" }
+}
+if (-not (Test-Path $SharedPackageIdsPath)) {
+    throw "Shared.PackageIds.props not found at '$SharedPackageIdsPath'. Run 'dotnet restore' first, or pass -SharedPackageIdsPath."
 }
 
 # ── Step 1: learn every "{Name}PackageId" pattern from Shared.PackageIds.props ─
