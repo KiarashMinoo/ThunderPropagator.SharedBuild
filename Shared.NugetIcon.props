@@ -26,13 +26,31 @@
     <MakeDir Directories="$(MSBuildThisFileDirectory)" Condition="!Exists('$(MSBuildThisFileDirectory)')"/>
     <Message Importance="normal" Text="[SharedProps] $(IconName) already present at $(IconPath); skipping download." Condition="Exists('$(IconPath)')"/>
     <Message Importance="normal" Text="[SharedProps] Downloading $(IconName) icon from $(IconUrl) (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(IconPath)')"/>
-    <DownloadFile DestinationFileName="$(IconName)"
+    <!-- A solution restore/build runs multiple projects — and, for multi-targeted ones, several
+         per-TargetFramework inner builds — in parallel, and each evaluates this target
+         independently. Downloading straight to $(IconPath) let two callers open the same
+         destination file for writing at the same time, producing MSB3923 "file in use by
+         another process". Download to a temp file unique to this project+TFM first, then
+         atomically Move it into place — the same fix already applied to DownloadSharedProps in
+         Directory.Build.props; see the comment there for the full reasoning, including why
+         $(MSBuildProcessId) doesn't give per-caller uniqueness here. -->
+    <DownloadFile DestinationFileName="$(IconName).$(MSBuildProjectName)$(TargetFramework).tmp"
                   SourceUrl="$(IconUrl)"
                   DestinationFolder="$(MSBuildThisFileDirectory)"
                   Condition="!Exists('$(IconPath)')"
                   Retries="3"
                   RetryDelayMilliseconds="2000"
                   ContinueOnError="WarnAndContinue"/>
+    <!-- Move does not overwrite an existing destination (throws MSB3677 if one is already
+         there), so this is first-writer-wins: only move our temp file into place if nobody
+         else's is there yet. Losing that race is harmless — a sibling's copy already won —
+         so it's downgraded to a warning instead of failing the build. -->
+    <Move SourceFiles="$(MSBuildThisFileDirectory)$(IconName).$(MSBuildProjectName)$(TargetFramework).tmp"
+          DestinationFiles="$(IconPath)"
+          Condition="Exists('$(MSBuildThisFileDirectory)$(IconName).$(MSBuildProjectName)$(TargetFramework).tmp') and !Exists('$(IconPath)')"
+          ContinueOnError="WarnAndContinue"/>
+    <Delete Files="$(MSBuildThisFileDirectory)$(IconName).$(MSBuildProjectName)$(TargetFramework).tmp"
+            Condition="Exists('$(MSBuildThisFileDirectory)$(IconName).$(MSBuildProjectName)$(TargetFramework).tmp')"/>
     <Message Importance="high" Text="[SharedProps] Could not download $(IconName) after 3 attempts; continuing without a PackageIcon for this build." Condition="!Exists('$(IconPath)')"/>
   </Target>
 
