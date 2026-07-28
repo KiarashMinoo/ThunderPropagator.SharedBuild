@@ -31,7 +31,7 @@
     <Delete Files="$(ScriptPath)" Condition="Exists('$(ScriptPath)')"/>
   </Target>
 
-  <Target Name="DownloadScript" BeforeTargets="_GenerateRestoreProjectPathWalk;Restore;Build">
+  <Target Name="DownloadScript" BeforeTargets="_GenerateRestoreProjectPathWalk;Restore;Build" Condition="'$(CI)' != 'true'">
     <MakeDir Directories="$(ScriptsPath)" Condition="!Exists('$(ScriptsPath)')"/>
     <Message Importance="normal" Text="[SharedProps] $(ScriptName) already present at $(ScriptPath); skipping download." Condition="Exists('$(ScriptPath)')"/>
     <Message Importance="normal" Text="[SharedProps] Downloading $(ScriptName) from $(ScriptUrl) (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(ScriptPath)')"/>
