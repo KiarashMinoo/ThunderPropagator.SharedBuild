@@ -36,30 +36,44 @@
 
   <!-- Downloaded one after another (not in parallel): both are small text files, so the
        simplicity of a plain sequential fetch outweighs the complexity of orchestrating real
-       concurrency here. -->
+       concurrency here. Each still downloads to a per-project+TFM temp file and atomically
+       Moves it into place — same MSB3923 race fix as DownloadThunderPropagatorIcon in
+       Shared.NugetIcon.props; see the comment there for the full reasoning. -->
   <Target Name="DownloadSharedNugetImports" BeforeTargets="_GenerateRestoreProjectPathWalk;Restore;Build">
     <MakeDir Directories="$(MSBuildThisFileDirectory)" Condition="!Exists('$(MSBuildThisFileDirectory)')"/>
 
     <Message Importance="normal" Text="[SharedProps] Shared.NugetIcon.props already present at $(SharedNugetIconPropsPath); skipping download." Condition="Exists('$(SharedNugetIconPropsPath)')"/>
     <Message Importance="normal" Text="[SharedProps] Downloading Shared.NugetIcon.props from $(SharedPropsBaseUrl)Shared.NugetIcon.props (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(SharedNugetIconPropsPath)')"/>
-    <DownloadFile DestinationFileName="Shared.NugetIcon.props"
+    <DownloadFile DestinationFileName="Shared.NugetIcon.props.$(MSBuildProjectName)$(TargetFramework).tmp"
                   SourceUrl="$(SharedPropsBaseUrl)Shared.NugetIcon.props"
                   DestinationFolder="$(MSBuildThisFileDirectory)"
                   Condition="!Exists('$(SharedNugetIconPropsPath)')"
                   Retries="3"
                   RetryDelayMilliseconds="2000"
                   ContinueOnError="WarnAndContinue"/>
+    <Move SourceFiles="$(MSBuildThisFileDirectory)Shared.NugetIcon.props.$(MSBuildProjectName)$(TargetFramework).tmp"
+          DestinationFiles="$(SharedNugetIconPropsPath)"
+          Condition="Exists('$(MSBuildThisFileDirectory)Shared.NugetIcon.props.$(MSBuildProjectName)$(TargetFramework).tmp') and !Exists('$(SharedNugetIconPropsPath)')"
+          ContinueOnError="WarnAndContinue"/>
+    <Delete Files="$(MSBuildThisFileDirectory)Shared.NugetIcon.props.$(MSBuildProjectName)$(TargetFramework).tmp"
+            Condition="Exists('$(MSBuildThisFileDirectory)Shared.NugetIcon.props.$(MSBuildProjectName)$(TargetFramework).tmp')"/>
     <Message Importance="high" Text="[SharedProps] Could not download Shared.NugetIcon.props after 3 attempts; icon packaging is skipped until a later restore succeeds." Condition="!Exists('$(SharedNugetIconPropsPath)')"/>
 
     <Message Importance="normal" Text="[SharedProps] Shared.NugetReadme.props already present at $(SharedNugetReadmePropsPath); skipping download." Condition="Exists('$(SharedNugetReadmePropsPath)')"/>
     <Message Importance="normal" Text="[SharedProps] Downloading Shared.NugetReadme.props from $(SharedPropsBaseUrl)Shared.NugetReadme.props (up to 3 attempts, 2s apart) ..." Condition="!Exists('$(SharedNugetReadmePropsPath)')"/>
-    <DownloadFile DestinationFileName="Shared.NugetReadme.props"
+    <DownloadFile DestinationFileName="Shared.NugetReadme.props.$(MSBuildProjectName)$(TargetFramework).tmp"
                   SourceUrl="$(SharedPropsBaseUrl)Shared.NugetReadme.props"
                   DestinationFolder="$(MSBuildThisFileDirectory)"
                   Condition="!Exists('$(SharedNugetReadmePropsPath)')"
                   Retries="3"
                   RetryDelayMilliseconds="2000"
                   ContinueOnError="WarnAndContinue"/>
+    <Move SourceFiles="$(MSBuildThisFileDirectory)Shared.NugetReadme.props.$(MSBuildProjectName)$(TargetFramework).tmp"
+          DestinationFiles="$(SharedNugetReadmePropsPath)"
+          Condition="Exists('$(MSBuildThisFileDirectory)Shared.NugetReadme.props.$(MSBuildProjectName)$(TargetFramework).tmp') and !Exists('$(SharedNugetReadmePropsPath)')"
+          ContinueOnError="WarnAndContinue"/>
+    <Delete Files="$(MSBuildThisFileDirectory)Shared.NugetReadme.props.$(MSBuildProjectName)$(TargetFramework).tmp"
+            Condition="Exists('$(MSBuildThisFileDirectory)Shared.NugetReadme.props.$(MSBuildProjectName)$(TargetFramework).tmp')"/>
     <Message Importance="high" Text="[SharedProps] Could not download Shared.NugetReadme.props after 3 attempts; readme packaging is skipped until a later restore succeeds." Condition="!Exists('$(SharedNugetReadmePropsPath)')"/>
   </Target>
 

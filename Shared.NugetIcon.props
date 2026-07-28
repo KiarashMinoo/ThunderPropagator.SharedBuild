@@ -31,9 +31,11 @@
          independently. Downloading straight to $(IconPath) let two callers open the same
          destination file for writing at the same time, producing MSB3923 "file in use by
          another process". Download to a temp file unique to this project+TFM first, then
-         atomically Move it into place — the same fix already applied to DownloadSharedProps in
-         Directory.Build.props; see the comment there for the full reasoning, including why
-         $(MSBuildProcessId) doesn't give per-caller uniqueness here. -->
+         atomically Move it into place. $(MSBuildProcessId) doesn't help here — a single `dotnet
+         build -m` process restores every project in the graph, so all of them share one process
+         ID; $(MSBuildProjectName)$(TargetFramework) is what's actually distinct per caller. This
+         is the reference implementation of the pattern — every other self-downloading target in
+         this repo applies the same fix and points back to this comment. -->
     <DownloadFile DestinationFileName="$(IconName).$(MSBuildProjectName)$(TargetFramework).tmp"
                   SourceUrl="$(IconUrl)"
                   DestinationFolder="$(MSBuildThisFileDirectory)"
