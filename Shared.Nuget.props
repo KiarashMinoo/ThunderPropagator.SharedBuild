@@ -118,7 +118,7 @@
     Reference assembly: has the compiler emit a second, metadata-only copy of the
     assembly (method bodies stripped) alongside the real one. The SDK packs it
     automatically into ref/<tfm>/ in the nupkg, separate from the full implementation
-    assembly under lib/<tfm>/ -- consumers compile against the small ref/ copy but run
+    assembly under lib/<tfm>/ - consumers compile against the small ref/ copy but run
     against lib/ at execution time. Purely a packaging/compile-time split; it changes
     nothing about runtime behavior, so it's safe to turn on unconditionally for every
     family package. Consumer-overridable, like the properties above.
