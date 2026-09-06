@@ -14,17 +14,169 @@
     <ThunderPropagatorPackageIdConfigurationSuffix Condition="'$(Configuration)' == 'Cluster'"></ThunderPropagatorPackageIdConfigurationSuffix>
   </PropertyGroup>
 
-  <!-- No family package publishes a bare ".Cluster"-suffixed id combined with a platform
-       suffix beyond what's listed here — don't add one without also adding the matching
-       package publish step. -->
-  <PropertyGroup Label="ThunderPropagatorPackageIds">
+  <PropertyGroup Label="BuildingBlocksPackageIds">
     <BuildingBlocksPackageId>ThunderPropagator.BuildingBlocks$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</BuildingBlocksPackageId>
     <BuildingBlocksModulesPackageId>ThunderPropagator.BuildingBlocks.Modules$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</BuildingBlocksModulesPackageId>
-
+  </PropertyGroup>
+  
+  <PropertyGroup Label="ThunderPropagatorPackageIds">
     <ThunderPropagatorApplicationPackageId>ThunderPropagator.Application$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ThunderPropagatorApplicationPackageId>
     <ThunderPropagatorPackageId>ThunderPropagator$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ThunderPropagatorPackageId>
 
-    <ThunderPropagatorClusterPackageId>ThunderPropagator.Cluster$(PackageIdPlatformSuffix)</ThunderPropagatorClusterPackageId>
     <ThunderPropagatorApplicationClusterPackageId>ThunderPropagator.Application.Cluster$(PackageIdPlatformSuffix)</ThunderPropagatorApplicationClusterPackageId>
+    <ThunderPropagatorClusterPackageId>ThunderPropagator.Cluster$(PackageIdPlatformSuffix)</ThunderPropagatorClusterPackageId>
+  </PropertyGroup>
+
+  <PropertyGroup Label="FormatSerializersPackageIds">
+    <MessagePackPackageId>ThunderPropagator.FormatSerializers.MessagePack$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</MessagePackPackageId>
+    <NetJsonPackageId>ThunderPropagator.FormatSerializers.NetJson$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</NetJsonPackageId>
+    <ProtobufPackageId>ThunderPropagator.FormatSerializers.Protobuf$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProtobufPackageId>
+    <ToonPackageId>ThunderPropagator.FormatSerializers.Toon$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ToonPackageId>
+    <XmlPackageId>ThunderPropagator.FormatSerializers.Xml$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</XmlPackageId>
+    <YamlPackageId>ThunderPropagator.FormatSerializers.Yaml$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</YamlPackageId>
+  </PropertyGroup>
+
+  <!-- ThunderPropagator.RecoveryHandlers: one package per storage backend, plus a shared
+       kernel. None of these are Cluster-only or platform-specific. -->
+  <PropertyGroup Label="RecoveryHandlersPackageIds">
+    <RecoveryHandlerSharedKernelPackageId>ThunderPropagator.RecoveryHandler.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</RecoveryHandlerSharedKernelPackageId>
+    <RecoveryHandlerMongoDbPackageId>ThunderPropagator.RecoveryHandler.MongoDb$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</RecoveryHandlerMongoDbPackageId>
+    <RecoveryHandlerRedisPackageId>ThunderPropagator.RecoveryHandler.Redis$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</RecoveryHandlerRedisPackageId>
+    <RecoveryHandlerPostgresqlPackageId>ThunderPropagator.RecoveryHandler.Postgresql$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</RecoveryHandlerPostgresqlPackageId>
+  </PropertyGroup>
+
+  <!-- ThunderPropagator.SubscriptionMessageFormatters: one package per format; these wrap
+       the matching FormatSerializersPackageIds entry above for pub/sub envelope formatting
+       (and, for some formats, HTTP input/output formatters), so the names deliberately carry
+       the repo prefix to stay distinct from the FormatSerializers ids they depend on. -->
+  <PropertyGroup Label="SubscriptionMessageFormattersPackageIds">
+    <SubscriptionMessageFormattersMessagePackPackageId>ThunderPropagator.SubscriptionMessageFormatters.MessagePack$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</SubscriptionMessageFormattersMessagePackPackageId>
+    <SubscriptionMessageFormattersNetJsonPackageId>ThunderPropagator.SubscriptionMessageFormatters.NetJson$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</SubscriptionMessageFormattersNetJsonPackageId>
+    <SubscriptionMessageFormattersProtobufPackageId>ThunderPropagator.SubscriptionMessageFormatters.Protobuf$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</SubscriptionMessageFormattersProtobufPackageId>
+    <SubscriptionMessageFormattersToonPackageId>ThunderPropagator.SubscriptionMessageFormatters.Toon$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</SubscriptionMessageFormattersToonPackageId>
+    <SubscriptionMessageFormattersXmlPackageId>ThunderPropagator.SubscriptionMessageFormatters.Xml$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</SubscriptionMessageFormattersXmlPackageId>
+    <SubscriptionMessageFormattersYamlPackageId>ThunderPropagator.SubscriptionMessageFormatters.Yaml$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</SubscriptionMessageFormattersYamlPackageId>
+  </PropertyGroup>
+
+  <!-- ThunderPropagator.ClusterMessageBuses: a shared kernel plus one package per transport.
+       None of these are Cluster-only (this repo's OWN packages aren't gated by the core
+       ".Cluster" configuration the way ThunderPropagatorClusterPackageId above is; a
+       consumer references them under whatever configuration IT builds under) or otherwise
+       suffix-special, so they use the same plain $(ThunderPropagatorPackageIdConfigurationSuffix)
+       pattern as everything else in this file. -->
+  <PropertyGroup Label="ClusterMessageBusesPackageIds">
+    <ClusterMessageBusesSharedKernelPackageId>ThunderPropagator.ClusterMessageBuses.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesSharedKernelPackageId>
+    <ClusterMessageBusesActiveMQPackageId>ThunderPropagator.ClusterMessageBuses.ActiveMQ$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesActiveMQPackageId>
+    <ClusterMessageBusesAwsSqsPackageId>ThunderPropagator.ClusterMessageBuses.AwsSqs$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesAwsSqsPackageId>
+    <ClusterMessageBusesAzureServiceBusPackageId>ThunderPropagator.ClusterMessageBuses.AzureServiceBus$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesAzureServiceBusPackageId>
+    <ClusterMessageBusesGcpPubSubPackageId>ThunderPropagator.ClusterMessageBuses.GcpPubSub$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesGcpPubSubPackageId>
+    <ClusterMessageBusesGrpcPackageId>ThunderPropagator.ClusterMessageBuses.Grpc$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesGrpcPackageId>
+    <ClusterMessageBusesKafkaPackageId>ThunderPropagator.ClusterMessageBuses.Kafka$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesKafkaPackageId>
+    <ClusterMessageBusesMqttPackageId>ThunderPropagator.ClusterMessageBuses.Mqtt$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesMqttPackageId>
+    <ClusterMessageBusesNATSPackageId>ThunderPropagator.ClusterMessageBuses.NATS$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesNATSPackageId>
+    <ClusterMessageBusesPulsarPackageId>ThunderPropagator.ClusterMessageBuses.Pulsar$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesPulsarPackageId>
+    <ClusterMessageBusesRabbitMQPackageId>ThunderPropagator.ClusterMessageBuses.RabbitMQ$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesRabbitMQPackageId>
+    <ClusterMessageBusesRedisPubSubPackageId>ThunderPropagator.ClusterMessageBuses.RedisPubSub$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesRedisPubSubPackageId>
+    <ClusterMessageBusesTcpSocketPackageId>ThunderPropagator.ClusterMessageBuses.TcpSocket$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesTcpSocketPackageId>
+    <ClusterMessageBusesUdpClientPackageId>ThunderPropagator.ClusterMessageBuses.UdpClient$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesUdpClientPackageId>
+    <ClusterMessageBusesWebApiPackageId>ThunderPropagator.ClusterMessageBuses.WebApi$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesWebApiPackageId>
+    <ClusterMessageBusesWebSocketPackageId>ThunderPropagator.ClusterMessageBuses.WebSocket$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesWebSocketPackageId>
+    <ClusterMessageBusesZeroMQPackageId>ThunderPropagator.ClusterMessageBuses.ZeroMQ$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ClusterMessageBusesZeroMQPackageId>
+  </PropertyGroup>
+
+  <!-- ThunderPropagator.Channels production-area units only (Demo/Games sample projects are
+       not meant to be consumed as dependencies by anything, so they get no property here even
+       though the repo's own CI currently packs them too; a separate, unrelated issue from
+       this centralization). -->
+  <PropertyGroup Label="ChannelsPackageIds">
+    <ChannelsChatPackageId>ThunderPropagator.Channels.Chat$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ChannelsChatPackageId>
+    <ChannelsChatEntityFrameworkCorePackageId>ThunderPropagator.Channels.Chat.EntityFrameworkCore$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ChannelsChatEntityFrameworkCorePackageId>
+    <ChannelsChatInMemoryPackageId>ThunderPropagator.Channels.Chat.InMemory$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ChannelsChatInMemoryPackageId>
+    <ChannelsChatMongoDBPackageId>ThunderPropagator.Channels.Chat.MongoDB$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ChannelsChatMongoDBPackageId>
+    <ChannelsClockPackageId>ThunderPropagator.Channels.Clock$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ChannelsClockPackageId>
+    <ChannelsNetworkMonitoringPackageId>ThunderPropagator.Channels.NetworkMonitoring$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ChannelsNetworkMonitoringPackageId>
+    <ChannelsNotificationsPackageId>ThunderPropagator.Channels.Notifications$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ChannelsNotificationsPackageId>
+    <ChannelsResourceMonitoringPackageId>ThunderPropagator.Channels.ResourceMonitoring$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ChannelsResourceMonitoringPackageId>
+    <ChannelsThroughputPackageId>ThunderPropagator.Channels.Throughput$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ChannelsThroughputPackageId>
+    <ChannelsTimeZonesPackageId>ThunderPropagator.Channels.TimeZones$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ChannelsTimeZonesPackageId>
+  </PropertyGroup>
+
+  <!-- ThunderPropagator.Feeviders: 13 transports each publish a Feeder, Provider, and per-
+       transport SharedKernel trio (ActiveMQ, AwsSqs, AzureServiceBus, GcpPubSub, Grpc, Mqtt,
+       NATS, Pulsar, RabbitMQ, RedisPubSub, TcpSocket, UdpClient, ZeroMQ); 3 transports (Kafka,
+       WebApi, WebSocket) publish only a Feeder + Provider pair, no per-transport SharedKernel;
+       plus two top-level SharedKernel packages and the InboxOutbox area (2 feeder/provider-
+       shaped packages: Feeders.Inbox / Providers.DotNet.Outbox; and 4 store backends). -->
+  <PropertyGroup Label="FeevidersPackageIds">
+    <FeedersSharedKernelPackageId>ThunderPropagator.Feeders.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersSharedKernelPackageId>
+    <ProvidersDotNetSharedKernelPackageId>ThunderPropagator.Providers.DotNet.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetSharedKernelPackageId>
+
+    <FeedersActiveMQPackageId>ThunderPropagator.Feeders.ActiveMQ$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersActiveMQPackageId>
+    <FeevidersActiveMQSharedKernelPackageId>ThunderPropagator.Feeviders.ActiveMQ.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeevidersActiveMQSharedKernelPackageId>
+    <ProvidersDotNetActiveMQPackageId>ThunderPropagator.Providers.DotNet.ActiveMQ$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetActiveMQPackageId>
+
+    <FeedersAwsSqsPackageId>ThunderPropagator.Feeders.AwsSqs$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersAwsSqsPackageId>
+    <FeevidersAwsSqsSharedKernelPackageId>ThunderPropagator.Feeviders.AwsSqs.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeevidersAwsSqsSharedKernelPackageId>
+    <ProvidersDotNetAwsSqsPackageId>ThunderPropagator.Providers.DotNet.AwsSqs$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetAwsSqsPackageId>
+
+    <FeedersAzureServiceBusPackageId>ThunderPropagator.Feeders.AzureServiceBus$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersAzureServiceBusPackageId>
+    <FeevidersAzureServiceBusSharedKernelPackageId>ThunderPropagator.Feeviders.AzureServiceBus.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeevidersAzureServiceBusSharedKernelPackageId>
+    <ProvidersDotNetAzureServiceBusPackageId>ThunderPropagator.Providers.DotNet.AzureServiceBus$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetAzureServiceBusPackageId>
+
+    <FeedersGcpPubSubPackageId>ThunderPropagator.Feeders.GcpPubSub$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersGcpPubSubPackageId>
+    <FeevidersGcpPubSubSharedKernelPackageId>ThunderPropagator.Feeviders.GcpPubSub.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeevidersGcpPubSubSharedKernelPackageId>
+    <ProvidersDotNetGcpPubSubPackageId>ThunderPropagator.Providers.DotNet.GcpPubSub$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetGcpPubSubPackageId>
+
+    <FeedersGrpcPackageId>ThunderPropagator.Feeders.Grpc$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersGrpcPackageId>
+    <FeevidersGrpcSharedKernelPackageId>ThunderPropagator.Feeviders.Grpc.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeevidersGrpcSharedKernelPackageId>
+    <ProvidersDotNetGrpcPackageId>ThunderPropagator.Providers.DotNet.Grpc$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetGrpcPackageId>
+
+    <FeedersMqttPackageId>ThunderPropagator.Feeders.Mqtt$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersMqttPackageId>
+    <FeevidersMqttSharedKernelPackageId>ThunderPropagator.Feeviders.Mqtt.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeevidersMqttSharedKernelPackageId>
+    <ProvidersDotNetMqttPackageId>ThunderPropagator.Providers.DotNet.Mqtt$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetMqttPackageId>
+
+    <FeedersNATSPackageId>ThunderPropagator.Feeders.NATS$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersNATSPackageId>
+    <FeevidersNATSSharedKernelPackageId>ThunderPropagator.Feeviders.NATS.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeevidersNATSSharedKernelPackageId>
+    <ProvidersDotNetNATSPackageId>ThunderPropagator.Providers.DotNet.NATS$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetNATSPackageId>
+
+    <FeedersPulsarPackageId>ThunderPropagator.Feeders.Pulsar$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersPulsarPackageId>
+    <FeevidersPulsarSharedKernelPackageId>ThunderPropagator.Feeviders.Pulsar.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeevidersPulsarSharedKernelPackageId>
+    <ProvidersDotNetPulsarPackageId>ThunderPropagator.Providers.DotNet.Pulsar$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetPulsarPackageId>
+
+    <FeedersRabbitMQPackageId>ThunderPropagator.Feeders.RabbitMQ$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersRabbitMQPackageId>
+    <FeevidersRabbitMQSharedKernelPackageId>ThunderPropagator.Feeviders.RabbitMQ.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeevidersRabbitMQSharedKernelPackageId>
+    <ProvidersDotNetRabbitMQPackageId>ThunderPropagator.Providers.DotNet.RabbitMQ$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetRabbitMQPackageId>
+
+    <FeedersRedisPubSubPackageId>ThunderPropagator.Feeders.RedisPubSub$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersRedisPubSubPackageId>
+    <FeevidersRedisPubSubSharedKernelPackageId>ThunderPropagator.Feeviders.RedisPubSub.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeevidersRedisPubSubSharedKernelPackageId>
+    <ProvidersDotNetRedisPubSubPackageId>ThunderPropagator.Providers.DotNet.RedisPubSub$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetRedisPubSubPackageId>
+
+    <FeedersTcpSocketPackageId>ThunderPropagator.Feeders.TcpSocket$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersTcpSocketPackageId>
+    <FeevidersTcpSocketSharedKernelPackageId>ThunderPropagator.Feeviders.TcpSocket.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeevidersTcpSocketSharedKernelPackageId>
+    <ProvidersDotNetTcpSocketPackageId>ThunderPropagator.Providers.DotNet.TcpSocket$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetTcpSocketPackageId>
+
+    <FeedersUdpClientPackageId>ThunderPropagator.Feeders.UdpClient$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersUdpClientPackageId>
+    <FeevidersUdpClientSharedKernelPackageId>ThunderPropagator.Feeviders.UdpClient.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeevidersUdpClientSharedKernelPackageId>
+    <ProvidersDotNetUdpClientPackageId>ThunderPropagator.Providers.DotNet.UdpClient$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetUdpClientPackageId>
+
+    <FeedersZeroMQPackageId>ThunderPropagator.Feeders.ZeroMQ$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersZeroMQPackageId>
+    <FeevidersZeroMQSharedKernelPackageId>ThunderPropagator.Feeviders.ZeroMQ.SharedKernel$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeevidersZeroMQSharedKernelPackageId>
+    <ProvidersDotNetZeroMQPackageId>ThunderPropagator.Providers.DotNet.ZeroMQ$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetZeroMQPackageId>
+
+    <FeedersKafkaPackageId>ThunderPropagator.Feeders.Kafka$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersKafkaPackageId>
+    <ProvidersDotNetKafkaPackageId>ThunderPropagator.Providers.DotNet.Kafka$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetKafkaPackageId>
+
+    <FeedersWebApiPackageId>ThunderPropagator.Feeders.WebApi$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersWebApiPackageId>
+    <ProvidersDotNetWebApiPackageId>ThunderPropagator.Providers.DotNet.WebApi$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetWebApiPackageId>
+
+    <FeedersWebSocketPackageId>ThunderPropagator.Feeders.WebSocket$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersWebSocketPackageId>
+    <ProvidersDotNetWebSocketPackageId>ThunderPropagator.Providers.DotNet.WebSocket$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetWebSocketPackageId>
+
+    <FeedersInboxPackageId>ThunderPropagator.Feeders.Inbox$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</FeedersInboxPackageId>
+    <ProvidersDotNetOutboxPackageId>ThunderPropagator.Providers.DotNet.Outbox$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</ProvidersDotNetOutboxPackageId>
+    <InboxOutboxEFCorePackageId>ThunderPropagator.InboxOutbox.EFCore$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</InboxOutboxEFCorePackageId>
+    <InboxOutboxInMemoryPackageId>ThunderPropagator.InboxOutbox.InMemory$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</InboxOutboxInMemoryPackageId>
+    <InboxOutboxMongoDBPackageId>ThunderPropagator.InboxOutbox.MongoDB$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</InboxOutboxMongoDBPackageId>
+    <InboxOutboxRedisPackageId>ThunderPropagator.InboxOutbox.Redis$(ThunderPropagatorPackageIdConfigurationSuffix)$(PackageIdPlatformSuffix)</InboxOutboxRedisPackageId>
   </PropertyGroup>
 </Project>
