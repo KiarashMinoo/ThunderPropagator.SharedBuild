@@ -1,25 +1,23 @@
 # CLAUDE.md
 
-Guidance for working in this repository.
+## What This Repo Is
 
-## What this repo is
+Static build-configuration repo — no source, no solution, nothing to `dotnet build`/`dotnet test` here. Every family repo downloads these files at restore/build time and imports them. No automated check catches a breaking change here before merge — a mistake breaks every consumer's build.
 
-A static build-configuration repo — no source code, no solution, nothing to `dotnet build` or `dotnet test` here. Every other repository in the product family downloads these files at restore/build time and imports them, so a mistake here breaks every consumer's build simultaneously, and there is currently no automated check in this repo to catch that before it's merged.
+## What Lives Here
 
-## What lives here
+- One file consumers import directly: SDK-wide compiler/target settings + NuGet package metadata + package-id suffix logic.
+- A granular split of the same two concerns: pure build/compiler-defaults file, pure packaging-metadata file (also owns a self-contained icon-download-and-cleanup step).
+- Analyzer-settings file: turns on .NET analyzers, treats analyzer/compiler warnings as errors.
+- Thin auto-import target: pulls analyzer settings into every consumer without touching its project file.
+- Editor/formatting-convention file, consumed like a consumer's own copy.
+- Package-identity file: one `{Name}PackageId` property per published family package (no family package publishes a `.Cluster`-suffixed variant).
+- Optional PowerShell dependency-updater: auto-discovers `{Name}PackageId`-driven entries in a consumer's `Directory.Packages.props` and bumps to latest (prerelease included), cross-referencing the package-identity file. Downloaded best-effort alongside the props files (skipped if present; absence never fails a build). Path resolution walks up from its own folder to find `Directory.Packages.props`.
+- Props file wiring the dependency-updater into a consumer's restore pipeline as a report-only, pre-restore check (never mutates a tracked file; failure = warning). Prefers a consumer's own committed script copy over the auto-downloaded one.
 
-- One file consumers import directly, combining SDK-wide compiler/target settings with NuGet package metadata and package-id suffix logic.
-- A more granular split of the same two concerns into a pure build/compiler-defaults file and a pure packaging-metadata file (the latter also owns a self-contained icon-download-and-cleanup step, so consumers don't vendor the brand image themselves).
-- An analyzer-settings file that turns on .NET analyzers and treats analyzer/compiler warnings as errors.
-- A thin auto-import target whose only job is pulling the analyzer settings into every consumer without touching that consumer's own project file.
-- An editor/formatting-convention file consumed the same way every other repo consumes its own copy.
-- A package-identity file: one `{Name}PackageId` property per published family package, so a consumer's central package-management file references the pattern instead of redefining it (and never accidentally depends on a `.Cluster`-suffixed package, since no family package publishes one).
-- An optional PowerShell dependency-updater: auto-discovers every `{Name}PackageId`-driven entry in a consumer's central package-management file and bumps it to the latest published version (prerelease included), by cross-referencing the package-identity file above. No consumer-specific edits needed — a consumer only needs to follow the existing `Include="$({Name}PackageId)"` convention. Downloaded best-effort alongside the props files (skipped once the file exists, same pattern as the icon download in `Shared.Nuget.props`); its absence never fails a build. Path resolution walks up from its own folder to find the consumer's `Directory.Packages.props`, so it works unmodified whether it's the auto-downloaded copy or a consumer's own committed copy (e.g. under `.github/scripts/`).
-- A props file wiring the dependency-updater into a consumer's restore pipeline as a report-only, pre-restore check (never mutates a tracked file; any failure is a warning). Prefers a consumer's own committed copy of the script over the auto-downloaded one when both exist.
+## Editing Conventions
 
-## Editing conventions
-
-- Every property should be additive/backward-compatible by default — guard consumer-overridable properties with an emptiness condition rather than forcing a value.
-- Validate a change against at least one consumer repo's restore/build before merging; there's no CI gate here to catch a regression automatically.
-- Tags/releases aren't used for this repo — consumers pin to a branch or commit, so avoid renaming branches or files that a live download target references without checking what breaks.
-- No smoke-test project exists; if you add non-trivial logic (beyond property/import declarations), consider adding one rather than relying on downstream repos to be the test suite.
+- Every property additive/backward-compatible by default — guard consumer-overridable properties with an emptiness condition, don't force a value.
+- Validate against at least one consumer repo's restore/build before merging.
+- Tags/releases unused — consumers pin to a branch/commit; avoid renaming branches/files a live download target references.
+- No smoke-test project — add one for any non-trivial logic beyond property/import declarations.

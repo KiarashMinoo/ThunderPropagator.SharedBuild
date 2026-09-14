@@ -1,0 +1,12 @@
+.idea/
+.vscode/
+.vs/
+*.suo
+*.user
+*.sln.docstates
+.DS_Store
+Thumbs.db
+.claude/settings.local.json
+.cr/
+.fleet/
+.git/
