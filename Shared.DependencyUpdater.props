@@ -77,7 +77,22 @@
        deleted in favor of it. -->
   <Target Name="RunDependencyUpdater" AfterTargets="DownloadScript;Restore" Condition="Exists('$(ScriptPath)') and '$(SkipPerProjectDependencyCheck)' != 'true'">
     <Message Importance="normal" Text="[SharedProps] Checking ThunderPropagator dependency versions via $(ScriptPath) ..."/>
+    <!-- pwsh (PowerShell 7+) isn't installed on every Windows dev machine by default, only
+         the built-in Windows PowerShell 5.1 (powershell.exe) is guaranteed to be there. Without
+         a fallback, a machine lacking pwsh fails this Exec with cmd.exe's "'pwsh' is not
+         recognized" (exit 9009) on every single restore. `where` is a cmd.exe builtin, so this
+         only runs the pwsh branch if pwsh actually resolves on PATH, falling back to
+         powershell.exe otherwise. Linux/macOS CI runners (GitHub Actions ubuntu-latest, etc.)
+         ship pwsh by default and have no powershell.exe to fall back to, so they skip straight
+         to the pwsh-only branch below. -->
+    <Exec Command="where pwsh >nul 2>&amp;1 &amp;&amp; (pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(ScriptPath)&quot; -Check) || (powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(ScriptPath)&quot; -Check)"
+          Condition="'$(OS)' == 'Windows_NT'"
+          ContinueOnError="WarnAndContinue"
+          IgnoreExitCode="true">
+      <Output TaskParameter="ExitCode" PropertyName="_DependencyCheckExitCode"/>
+    </Exec>
     <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(ScriptPath)&quot; -Check"
+          Condition="'$(OS)' != 'Windows_NT'"
           ContinueOnError="WarnAndContinue"
           IgnoreExitCode="true">
       <Output TaskParameter="ExitCode" PropertyName="_DependencyCheckExitCode"/>
