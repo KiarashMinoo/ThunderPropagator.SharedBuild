@@ -3,6 +3,20 @@
     Pure build/compiler-defaults half of the SDK-wide/packaging split described in
     CLAUDE.md — no NuGet metadata here, see Shared.Nuget.props for that.
   -->
+  <!-- Single base version for EVERY ThunderPropagator family package. To move the whole family
+       to a new line (1.0.1 -> 2.0.0) change only ThunderPropagatorBaseVersion here,
+       and make every repo's Directory.Build.props <Version> start with the same base
+       (CI bumps only the trailing build number). A repo whose <Version> doesn't start
+       with the base will publish packages the floating pins can't see.
+       Consumers reference ThunderPropagatorFloatingVersion (e.g. "1.0.1-beta.*"), the same way
+       Microsoft packages float on "8.*". Both are overridable by a consumer. Floating needs
+       CentralPackageFloatingVersionsEnabled (on in every consumer). -->
+  <PropertyGroup Label="ThunderPropagatorVersion">
+    <ThunderPropagatorBaseVersion Condition="'$(ThunderPropagatorBaseVersion)' == ''">1.0.1</ThunderPropagatorBaseVersion>
+    <ThunderPropagatorVersionChannel Condition="'$(ThunderPropagatorVersionChannel)' == ''">-beta.</ThunderPropagatorVersionChannel>
+    <ThunderPropagatorFloatingVersion Condition="'$(ThunderPropagatorFloatingVersion)' == ''">$(ThunderPropagatorBaseVersion)$(ThunderPropagatorVersionChannel)*</ThunderPropagatorFloatingVersion>
+  </PropertyGroup>
+
   <PropertyGroup Label="DefaultBuildContext">
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>
