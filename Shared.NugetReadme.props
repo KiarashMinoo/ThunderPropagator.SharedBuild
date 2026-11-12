@@ -15,7 +15,7 @@
        skipped instead of failing the pack — see Shared.Nuget.props for the matching
        PackageReadmeFile guard that keeps NuGet from expecting a file that was never packed. -->
   <ItemGroup Label="PackageAssets">
-    <!-- The real NU5050 cause on a multi-targeted consumer (net8.0;net9.0;net10.0, per
+    <!-- The real NU5050 cause on a multi-targeted consumer (net8.0;net9.0;net10.0;net11.0, per
          Shared.Build.props): `dotnet pack` runs one inner build per TargetFramework, and
          each inner build independently evaluates this ItemGroup and contributes its own
          copy of the None item to the outer, aggregating pack. PackagePath="" + Link="README.md"

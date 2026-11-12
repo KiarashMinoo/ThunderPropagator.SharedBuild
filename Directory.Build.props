@@ -9,7 +9,7 @@
     <Configurations>Debug;Release</Configurations>
     <LangVersion>latestmajor</LangVersion>
     <Platforms>AnyCPU;x86;x64;ARM64</Platforms>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0;net11.0</TargetFrameworks>
     <UseRidGraph>true</UseRidGraph>
   </PropertyGroup>  
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
